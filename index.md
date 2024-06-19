@@ -1,5 +1,3 @@
-Here you can say lots of fun things about your site.
+I am Humza Shahid, a software developer living in the UK.
 
-Maybe say a some things about yourself.
-
-Or maybe what you plan to blog about.
+I expect a good number of blog posts here to be about functional programming (which is the type of programming I spend most of my free time on) but I won't be writing much from an academically-inclined perspective.
