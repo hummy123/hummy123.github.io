@@ -14,7 +14,7 @@ The answer is by separating pure functions from those impure functions performin
 
 Generally, every non-trivial program can be decomposed into three stages: input, process, and output.
 
-![Diagram showing input flowing into process, and process result flowing into output](https://raw.githubusercontent.com/hummy123/hummy123.github.io/796c10e25ea467e0ba7681b5594c729f6e081f23/docs/assets/fcis-nested.png)
+![Diagram showing input flowing into process, and process result flowing into output](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/ipo.png?raw=true)
 
 **Input**
 
@@ -138,5 +138,10 @@ Instead, we can try to maximise our benefits from this architecture by designing
 
 ![Diagram showing a program with one functional core and one imperative shell. The imperative shell itself is split into a functional core and imperative shell.](https://raw.githubusercontent.com/hummy123/hummy123.github.io/796c10e25ea467e0ba7681b5594c729f6e081f23/docs/assets/fcis-nested.png)
 
-
 This lets us reap more of the benefits that functional programming offers us. It is easier to reason about (which I think is the biggest advantage), it is more testable, it is more scriptable and so on.
+
+#### Further information
+
+The best explanation that I've seen about this architecture (which is a term I prefer in this case to "design pattern" because it applies to the whole program) is Gary Bernhardt's [talk on boundaries](https://www.destroyallsoftware.com/talks/boundaries), which I recommend.
+
+He talks more about the benefits of the architecture and how it eliminates the need for mocks in testing.
