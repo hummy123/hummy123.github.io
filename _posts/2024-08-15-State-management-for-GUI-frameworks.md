@@ -72,7 +72,7 @@ Of course, one would often want more cases in the state tree, including keyed co
 ---
 A small aside on accessibility: I have no experience programming with accessibility in mind and may be wrong, but I believe an immutable state tree such as this can represent the data needed for interacting with accessibility APIs quite well.
 
-Chromium uses an (accessibility tree)[https://chromium.googlesource.com/chromium/src/+/master/docs/accessibility/overview.md] which sounds similar to this state tree, and so does the AccessKit crate in Rust.
+Chromium uses an [accessibility tree](https://chromium.googlesource.com/chromium/src/+/master/docs/accessibility/overview.md) which sounds similar to this state tree, and so does the AccessKit crate in Rust.
 
 The main data representation change needed, I think, involves annotating the tree with more information (such as having nodes in the state tree for Labels, and possibly for the Center widget too, so that layout information can be conveyed to accessibility tools).
 
@@ -162,4 +162,4 @@ I have learned a lot about various topics from people on the internet and hoped 
 
 ---
 
-The main inspiration behind this idea comes from @yawaramin and @art-w on the (OCaml forum)[https://discuss.ocaml.org/t/unique-function-ids/12576]. I don’t claim the idea presented here is a unique one that hasn’t been tried before but it may be useful to others and worth writing about.
+The main inspiration behind this idea comes from @yawaramin and @art-w on the [OCaml forum](https://discuss.ocaml.org/t/unique-function-ids/12576). I don’t claim the idea presented here is a unique one that hasn’t been tried before but it may be useful to others and worth writing about.
