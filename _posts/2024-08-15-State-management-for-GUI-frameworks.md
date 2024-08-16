@@ -25,13 +25,13 @@ Diagrams showing the correspondence between the widget tree and state tree are b
 
 #### Widget tree
 
-![Diagram of a widget tree, containing a column widget at the root, text boxes at the first two indices of the column, and a button wrapped in a Center widget in the third index.](placeholder_url)
+![Diagram of a widget tree, containing a column widget at the root, text boxes at the first two indices of the column, and a button wrapped in a Center widget in the third index.](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/widget%20tree.png?raw=true)
 
 This represents an example widget tree for a standard login form. There’s a column laying out three widgets vertically: the first widget is a textbox for the email, the second is another textbox for the password, and the third is a centred button containing a label.
 
 #### State tree
 
-![Diagram of a state tree. This diagram depicts a column state object, which contains textbox state objects at the first two indices and a button state object at the third index. The button itself contains a Leaf state object.](placeholder_url)
+![Diagram of a state tree. This diagram depicts a column state object, which contains textbox state objects at the first two indices and a button state object at the third index. The button itself contains a Leaf state object.](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/state%20tree.png?raw=true)
 
 The state tree mirrors the widget tree, although with some differences. The main difference is “path compression”: the centre widget has no state and needs no place in the state tree because of this.
 
