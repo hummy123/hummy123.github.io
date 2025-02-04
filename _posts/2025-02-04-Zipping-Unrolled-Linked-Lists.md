@@ -1,6 +1,6 @@
 ## Zipping Unrolled Linked Lists
 
-Sicne October 2024, I've been slowly working on a text editor project similar to Vi/Vim using Standard ML, and one of the first choices I had to make was about the particular data structure to use.
+Since October 2024, I've been slowly working on a text editor project similar to Vi/Vim using Standard ML, and one of the first choices I had to make was about the particular data structure to use.
 
 The three data structures most commonly used for such a purpose are:
 
@@ -36,7 +36,7 @@ One such data structure is the unrolled linked list, which is a linked list cont
 
 The below diagram illustrates how each of the three data structures are represented in memory.
 
-(todo: insert diagram)
+![Diagram of showing that arrays are in contiguous memory, linked lists are scattered over memory with pointers to the next element, and unrolled linked lists use a mix of having some elements stored contiguously like arrays while having others scattered in meemory like linked lists](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/array-linked-list-unrolled-linked-list.png?raw=true)
 
 - The array is contiguous in memory, not needing pointers to indicate the next element
 - The linked list is scattered in memory, needing pointers to indicate the next element
@@ -44,7 +44,7 @@ The below diagram illustrates how each of the three data structures are represen
 
 If we want to insert an element into the middle of a node, say 2.5, we have to check if the array is at the max capacity we impose on it. If it is, we split this array into two arrays and link them as required, as shown in the below diagram.
 
-(todo: insert diagram)
+![To insert 2.5 into a full node containing "1,2,3", we split the full node into two nodes, and randomly choose to insert 2.5 into any one of the split nodes.](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/splitting-unrolled-linked-list.png?raw=true)
 
 This approach does the trick in providing a better balance between arrays and linked lists.
 
@@ -63,7 +63,7 @@ A zipper is a general way to "save the context" or "save a specific position" in
 
 The list zipper is simple conceptually and  can generally be visualised as two stacks as below.
 
-(todo: insert diagram)
+![A list zipper represented as two stacks: one left stack containing "hello" and a right stack containing "world"](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/initial-zipper.png?raw=true)
 
 Notice how the left stack spells "hello" when read from the bottom to the top, from the "h" at the bottom to the "o" at the top of the stack. This is different from the right stack which is read from top to bottom, with the "w" at the top and the "d" at the bottom.
 
@@ -78,7 +78,7 @@ To move rightwards one character, we just need to do a couple of operations that
 
 We can move our cursor rightwards by popping the top element of the right stack and pushing it onto the left stack.
 
-(todo: insert diagram)
+![We can move rightwards in the zipper by popping the top element from the right stack and pushing it onto the left stack]((https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/zipper-move-right.png?raw=true)
 
 If we want to move leftwards, we perform the inverse: pop the top element off the left stack and push it onto the right stack. 
 
@@ -86,13 +86,13 @@ Inserting or removing text is easy as, for removal, one can pop off an element f
 
 It is basically a doubly linked list except immutable, and taking less storage as each list only points to one direction. 
 
-It's fair to note that traversal time is improved. While it is still O(n) in the worst case, when one stack is empty and all of the elements are on the other side, it is usually the case that we are closer to the middle rather than the far end, and this helps bring down the traversal time by a constant factor.
+It's fair to note that traversal time has improved. While it is still O(n) in the worst case, when one stack is empty and all of the elements are on the other side, it is usually the case that we are closer to the middle rather than the far end, and this helps bring down the traversal time by a constant factor.
 
 ### The Zipped and Unrolled Linked List
 
 We can put together the two previous ideas, combining unrolled linked lists with zippers, for a surprisingly simple and efficient data structure.
 
-(todo: insert diagram)
+![An unrolled linked list contains a left stack and a right stack like a list zipper, and the elements of the stack are array nodes like an unrolled linked list](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/unrolled-list-zipper.png?raw=true)
 
 Each word is its own linked list node for readability in the diagram, but we want to set a maximum length to our array nodes in practice. If inserting an element would cause us to exceed the maximum length, we split the array off into two and put one array on the left stack and the other on the right stack.
 
@@ -100,7 +100,7 @@ This guiding principle, "maximise the length of the array node until we reach so
 
 If we set too high of a limit, our data structure will degenerate into a simple array. If we set too low of a limit, it will degenerate into a plain old linked list.
 
-The best way to find a good limit is to measure of course. If we are dealing with UTF-8 strings, I've found in experiments that 1024 characters is a good limit. 
+The best way to find a good limit is to measure, of course. If we are dealing with UTF-8 strings, I've found in experiments that 1024 characters is a good limit. 
 
 If we're dealing with some other type, we will likely want a lower limit. UTF-8 chars take just one byte, which means we can fit a higher number of chars in the same block of memory compared to 32-bit integers. There's less copying involved.
 
@@ -151,10 +151,10 @@ The Jetpack Compose team has [used the structure to good effect](https://medium.
 
 I've used them as an alternative to a set data structure in my text editor, where they perform well for keeping track of "matching indices" when performing find-and-replace operations. They work well there (although I might consider other data structures at some point - there is some level of incrementality currently, but the matched indices will need to change as the text changes, requiring  all indices after the insert/deletion to be changed as well - maybe a Fenwick tree of some kind would be better). 
 
-They are probably not suited for some of the fancier set operations (intersection, difference) but they work well for insertion, removal, and membership (testing existence of an element) operations. They work just as well for maps (a collection of key-value pairse) as they do for sets.
+They are probably not suited for some of the fancier set operations (intersection, difference) but they work well for insertion, removal, and membership (testing existence of an element) operations. They work just as well for maps (a collection of key-value pairs) as they do for sets.
 
-The most natural competing data structure might be [Clojure's persistent Vectors](https://hypirion.com/musings/understanding-persistent-vector-pt-1). Rich Hickey has developed a very fast vector supporting the following operations in close-to-constant (actually O(log n)) time: append-to-end, remove-lsat-element, update-at-index and get-at-index.
+The most natural competing data structure might be [Clojure's persistent Vectors](https://hypirion.com/musings/understanding-persistent-vector-pt-1). Rich Hickey has developed a very fast vector supporting the following operations in close-to-constant (actually O(log n)) time: append-to-end, remove-last-element, update-at-index and get-at-index.
 
 These operations on Clojure's vectors perform better in the worst case than for unrolled linked lists, but worse in cases where many edits are made in neighbouring places in an unrolled linked list. The unrolled linked list also supports more operations: insert or remove at any point in the structure and not just the end.
 
-As an improvement to Clojure's persisten vectors, there is the [Relaxed Radix Balanced Tree](https://peter.horne-khan.com/relaxed-radix-balanced-trees/) which attains support for more operations (insert and remove at any point, as well as merging two trees together). It is more complex than an unrolled linked list conceptually, but it may be a winner. I would like to try implementing it some day.
+As an improvement to Clojure's persistent vectors, there is the [Relaxed Radix Balanced Tree](https://peter.horne-khan.com/relaxed-radix-balanced-trees/) which attains support for more operations (insert and remove at any point, as well as merging two trees together). It is more complex than an unrolled linked list conceptually, but it may be a winner. I would like to try implementing it some day.
