@@ -78,7 +78,7 @@ To move rightwards one character, we just need to do a couple of operations that
 
 We can move our cursor rightwards by popping the top element of the right stack and pushing it onto the left stack.
 
-![We can move rightwards in the zipper by popping the top element from the right stack and pushing it onto the left stack]((https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/zipper-move-right.png?raw=true)
+![We can move rightwards in the zipper by popping the top element from the right stack and pushing it onto the left stack](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/zipper-move-right.png?raw=true)
 
 If we want to move leftwards, we perform the inverse: pop the top element off the left stack and push it onto the right stack. 
 
