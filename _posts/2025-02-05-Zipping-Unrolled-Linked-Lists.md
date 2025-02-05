@@ -44,14 +44,16 @@ The below diagram illustrates how each of the three data structures are represen
 
 If we want to insert an element into the middle of a node, say 2.5, we have to check if the array is at the max capacity we impose on it. If it is, we split this array into two arrays and link them as required, as shown in the below diagram.
 
+Such splitting only occurs when an insertion would cause us to exceed the maximum length. In the default case, we would insert in the same way standard arrays do: shifting the necessary elements rightwards by one and placing our new element in the gap. This is fast because of our maximum limit on the array.
+
 ![To insert 2.5 into a full node containing "1,2,3", we split the full node into two nodes, and randomly choose to insert 2.5 into any one of the split nodes.](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/splitting-unrolled-linked-list.png?raw=true)
 
 This approach does the trick in providing a better balance between arrays and linked lists.
 
-- If we want to (remove or add to) the start or middle of any node, because there are fewer elements in the array contained at this node, the constant is significantly lower than a standard array so it takes less time
+- If we want to `remove from` or `add to` the start or middle of any node, because there are fewer elements in the array contained at this node, the constant is significantly lower than a standard array so it takes less time
 - If we want to add a new node containing '0' or '10', then that takes constant time like a normal linked list (assuming we have travelled to the place we want to insert to)
 
-However, there is a glaring weakness in traversal. Imagine we had 100 elements in our unrolled linked list and we wanted to do many operations at the end.
+However, there is a notable weakness in traversal. Imagine we had 100 elements in our unrolled linked list and we wanted to do many operations at the end.
 
 Although the traversal time is better than a standard linked list (there are fewer pointers to chase because each node contains many elements), it still involves a fair amount of time to get to the end, and this is bad if we want to reach the end repeatedly.
 
@@ -67,7 +69,7 @@ The list zipper is simple conceptually and  can generally be visualised as two s
 
 Notice how the left stack spells "hello" when read from the bottom to the top, from the "h" at the bottom to the "o" at the top of the stack. This is different from the right stack which is read from top to bottom, with the "w" at the top and the "d" at the bottom.
 
-In pure textual form, the left stack would be: `["o", "l", "l", "e", "h"]` and the right stack would be `"["w", "o", "r", "l", "d"]`.
+In pure textual form, the left stack would be: `["o", "l", "l", "e", "h"]` and the right stack would be `["w", "o", "r", "l", "d"]`.
 
 This unintuitive-at-first representation helps us move the cursor efficiently.
 
@@ -76,17 +78,21 @@ To move rightwards one character, we just need to do a couple of operations that
 - Pop the "w" off the right stack
 - Push the "w" onto the left stack
 
-We can move our cursor rightwards by popping the top element of the right stack and pushing it onto the left stack.
+We can move our cursor rightwards by popping the top element off from the right stack and pushing it onto the left stack.
 
 ![We can move rightwards in the zipper by popping the top element from the right stack and pushing it onto the left stack](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/zipper-move-right.png?raw=true)
 
 If we want to move leftwards, we perform the inverse: pop the top element off the left stack and push it onto the right stack. 
 
-Inserting or removing text is easy as, for removal, one can pop off an element from the relevant stack after traversing to their desired point. Insertion simply involves pushing an element on the desired stack.
+Inserting or removing text is simple. Both first involve traversing to the desired point first. After that, removal simply involves popping an element off the relevant stack, while insertion involves pushin an element on either stack.
 
-It is basically a doubly linked list except immutable, and taking less storage as each list only points to one direction. 
+The list zipper is basically a doubly linked list except immutable, and with lower storage overheadc as each node has one pointer to the next node instead of two.
 
 It's fair to note that traversal time has improved. While it is still O(n) in the worst case, when one stack is empty and all of the elements are on the other side, it is usually the case that we are closer to the middle rather than the far end, and this helps bring down the traversal time by a constant factor.
+
+In other words, a linked list traverses by chasing pointers after each element. To get from 1 to 5, the chain would be `1 -> 2 -> 3 -> 4 -> 5`. That's four pointer chases.
+
+An unrolled linked list can traverse more quickly because there are fewer pointers to chase. To get from 1 to 5, the chain would be `[1, 2, 3] -> [4, 5]` which is just one pointer traversal from the first array node to the next. The constant factor is lower.
 
 ### The Zipped and Unrolled Linked List
 
@@ -100,7 +106,7 @@ This guiding principle, "maximise the length of the array node until we reach so
 
 If we set too high of a limit, our data structure will degenerate into a simple array. If we set too low of a limit, it will degenerate into a plain old linked list.
 
-The best way to find a good limit is to measure, of course. If we are dealing with UTF-8 strings, I've found in experiments that 1024 characters is a good limit. 
+The best way to find a good limit is to measure, of course. If we are dealing with UTF-8 strings, I've found in practice that 1024 characters is a good limit. 
 
 If we're dealing with some other type, we will likely want a lower limit. UTF-8 chars take just one byte, which means we can fit a higher number of chars in the same block of memory compared to 32-bit integers. There's less copying involved.
 
@@ -108,7 +114,9 @@ The zipper has been described as conceptually being a generalisation of the Gap 
 
 ### How does it perform?
 
-I normally code in Standard ML for hobby projects these days, and have both a good implementation of Ropes and a Gap Buffer. We can run the data structures against [the real-life recordings of editing traces helpfully shared by Joseph Gentle](https://github.com/josephg/editing-traces).
+I normally code in Standard ML for hobby projects these days, and have a good implementation of both Ropes and a Gap Buffers. We can run the data structures against [the real-life recordings of editing traces helpfully shared by Joseph Gentle](https://github.com/josephg/editing-traces).
+
+These datasets record how people typed out a given piece of text in practice, the sequence of insertions and deletions to go from a blank document to the final text. They're a good way to measure real life performance for text editing (although they notably don't test retrieval time which involves getting the words to display on the screen).
 
 | Dataset | Mean [ms] | Min [ms] | Max [ms] | Relative |
 |:---|---:|---:|---:|---:|
@@ -125,7 +133,7 @@ These edit traces measure how long the data structure takes to perform all of th
 
 Both data structures are far faster than necessary: they are on the order of milliseconds for completing texts that took a longer stretch of time (hours, days, weeks) to type out. The performance game is still fun though, and we have time for other compute-intensive tasks because of it.
 
-We can see here that the Gap Buffer is, on these traces, at minimum twice as fast as the Rope. In one case, it is approximately 4x faster.
+We can see here that the Gap Buffer is, on these traces, at least twice as fast as the Rope. In one case, it is approximately 4x faster.
 
 These benchmark results are reproducible and can be run by installing the hyperfine benchmarking tool, going to the `bench` folder in [brolib-sml](https://github.com/hummy123/brolib-sml/tree/main/bench) and entering `make` in the terminal.
 
@@ -133,7 +141,7 @@ One might wonder if the Rope is a bad implementation for these comparisons. It m
 
 In that ecosystem, it massively outperformed all of the competing and comparable data structures I could find, where this Rope was often more than 10x faster than two other Rope implementations (one in the [ocaml-bazaar repository](https://github.com/backtracking/ocaml-bazaar) and [zed](https://github.com/ocaml-community/zed) which is often the community's first choice and not to be confused by the Zed editor written in Rust). It is also often 10x faster than my own [OCaml "piecerope" implementation](https://github.com/hummy123/ocaml-piecerope) which was an attempt to combine VS Code style "Piece Trees" with the Rope (mostly sticking to the Piece Tree side of things).
 
-So it's a pretty good Rope. That criticism doesn't hold water.
+So, it's a pretty good Rope. That criticism doesn't hold water.
 
 There is also the [latency argument](https://news.ycombinator.com/item?id=37821854). Because the Gap Buffer (including traditional mutable Gap Buffers) has constant-time operations where the cursor is but worst case O(n) operations when moving the from one node to the next, the user might perceive lag during individual operations, even though the total time taken for all operations is technically faster.
 
