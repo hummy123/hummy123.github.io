@@ -30,4 +30,21 @@ The main factor determining the order of operations is precedence, but the assoc
 
 ### The Precedence Climbing Algorithm
 
+The Precedence Climbing algorithm is one way, the simplest in my opinion, of handling infix expressions.
 
+The basic idea is this: 
+
+1. We take the first number in the expression and bookmark our position.
+2. We walk through the remaining part of the expression from left to right until we find an operator with lower or equal precedence to the one just before it.
+3. We perform some action (like calculating a number or creating a parse tree) from the point we finished at in step 2, up to the point we started at before step 2.
+4. We repeat steps 2 and 3 until we have walked through the entire expression.
+
+Let's look at some examples to better understand this.
+
+**1 + 3 + 5**
+
+1. We take the first number, leaving us with the the partial expression `+ 3 + 5`.
+2. We look at the next operator `+`, the next number `3`, and the operator after `3` which is `+` again.
+3. The precedence of the first and second operator are equal so we 
+4. We look at the next operator `+` and the next number `5`.
+5. Seeing that there are no more operators
