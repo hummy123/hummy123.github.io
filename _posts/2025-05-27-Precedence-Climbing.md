@@ -30,21 +30,30 @@ The main factor determining the order of operations is precedence, but the assoc
 
 ### The Precedence Climbing Algorithm
 
-The Precedence Climbing algorithm is one way, the simplest in my opinion, of handling infix expressions.
+The Precedence Climbing algorithm is one way, the simplest in my opinion, of handling infix expressions. I will assume we are trying to evaluate a numerical expression for a more straightforward description, but the algorithm's "output" can easily be something else like a parse tree.
 
 The basic idea is this: 
 
-1. We take the first number in the expression and bookmark our position.
-2. We walk through the remaining part of the expression from left to right until we find an operator with lower or equal precedence to the one just before it.
-3. We perform some action (like calculating a number or creating a parse tree) from the point we finished at in step 2, up to the point we started at before step 2.
-4. We repeat steps 2 and 3 until we have walked through the entire expression.
+1. We take the first number in the expression and place a bookmark after the number.
+2. If we are now at the end of the expression, we return the number we have and that is our final calculation.
+3. Otherwise: we walk through the remaining part of the expression from left to right until we find an operator with lower or equal precedence to the one just before it and place a bookmark just before that operator.
+4. We evaluate the part of the expression between the bookmarks, starting from the rightmost bookmark from step 3. (It is important to start the calculation from the rightmost bookmark because we only advance through the expression if there is higher precedence.)
+5. We feed our calculated-so-far number back into step 2 starting from the rightmost bookmark, and repeat step 2 - 4 until the whole expression is consumed.
 
-Let's look at some examples to better understand this.
+There are two things to keep in mind not explicitly stated in the previous steps:
 
-**1 + 3 + 5**
+- In step 3, we look for an operator with lower or equal precedence to the operator just before it. However, this is only if the latest operator is left-associative. If the operator we are comparing with is right-associative, we still continue if the next operator has equal precedence.
+- In our first walk through the expression at step 3, we accept any operator at all because there is no previous operator for us to compare with. We also accept any operator at all when reach step 5 which instructs us to go to step 2.
 
-1. We take the first number, leaving us with the the partial expression `+ 3 + 5`.
-2. We look at the next operator `+`, the next number `3`, and the operator after `3` which is `+` again.
-3. The precedence of the first and second operator are equal so we 
-4. We look at the next operator `+` and the next number `5`.
-5. Seeing that there are no more operators
+Finally, the above rules don't consider parenthesised sub-expressions like `1 - (2 - 3)`. I'm trying not to get too technical, but two ways to handle parenthesised expressions are:
+
+1. Encode parenthesised expressions in our grammar with a rule like `exp ::= (exp)`
+2. Start an "inner" precedence climbing algorithm through recursion after the first `(`, and skip past the matching `)` in the outer algorithm once the inner algorithm finishes, treating the whole sub-expression as one unit.
+
+I personally prefer the first approach when writing a recursive descent parser for a programming language because the precedence climbing algorithm doesn't need to concern itself with parenthesised expression, but if my goal is to build a calculator, I will go with the second approach as a calculator does not really need a BNF or a formal grammar.
+
+That explanation might be a lot to take in from one's first encounter with the algorithm, but going through some examples will help illustrate the idea.
+
+To help with that, I built a visualisation tool that lets you input a numerical expression and walks through the steps of calculating it using this algorithm.
+
+Here is the link: {to do: create the tool}
