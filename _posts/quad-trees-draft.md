@@ -36,10 +36,24 @@ We probably don't want to do anything about that as far as visuals are concerned
 
 The below image shows what this looks like. 
 
-TODO: merged tile image
+TODO: merged tile image. Tile looks like one square and it actually is four squares in terms of behaviour. However, show that it is possible to merge into a single square (for behaviour).
 
 Graphically, there are four tiles. There are four squares with identical behaviour. 
 
 However, we can reduce memory usage and make our code faster if we consider (for the purposes of behaviour) that only one single square exists.
 
 This is the tile merging problem. We would like to consider adjacent tiles to be one larger tile.
+
+How do we find adjacent tiles and merge them? There are different algorithms. This blog post focuses on a surprisingly simple one using quad trees.
+
+### Identifying Mergeable Tiles with Quad Trees
+
+TODO: introduce quad tree as a data structure that is either a node or a leaf with an item. (Talk about how we assume no overlap too, unlike in games/collision detection.)
+
+#### Building a Quad Tree
+
+TODO: talk about implicit quad tree (a good enough result, can put into a set like a binary tree or hash table, odd numbers, etc.)
+
+#### Optimality
+
+TODO: talk about how quad tree may be used as first pass, and we can use different algorithms for further merging after building a quad tree
