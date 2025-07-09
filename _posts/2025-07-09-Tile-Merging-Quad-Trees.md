@@ -89,7 +89,7 @@ To solve this issue where we want to decompose a rectangular image, we say the i
 
 We can then use null values, an option/maybe type, junk data that is used nowhere else, or whatever, for the coordinates that don't exist in the original image. 
 
-We can add an Empty case to the quad tree data type to describe null quadrants if we want, and construct Empty instead of a Leaf, when we encounter an area with junk data.
+We can add an Empty case to the quad tree data type to describe null quadrants if we want, and return `Empty` instead of a `Leaf`, when we encounter an area with junk data.
 
 #### Handle division by odd numbers correctly
 
@@ -101,7 +101,7 @@ This seems to suggest we want four sub-quadrants that are 2 pixels wide and 2 pi
 
 We deal with this issue by making two quadrants which are 2 pixels tall, and two quadrants which are 3 pixels tall.
 
-It is no help to address this problem by considering floating point numbers, because pixels are integers themselves.
+It is no help to address this problem by considering floating point numbers, because pixels are integers themselves. A single pixel cannot be split in half.
 
 #### Optimal merging
 
@@ -125,9 +125,17 @@ The previous section stated that quad trees are not guaranteed to decompose tile
 
 However, sometimes a "good enough" solution is just what we need. For example, we might want to reduce tile count while the program is running, and then minimise the number of tiles only when we export them. (This is what I am doing in a pixel editing program I am working on.)
 
-In that case, we can skip building the quad tree. We can follow the same process where we divide squares into quadrants, but at the level where we would normally create a Leaf, we could choose to insert the item into another data structure (like an array, a linked list, or a binary tree).
+Our main consideration in this article is reducing the number of tiles, but the time taken for the process to be done is also an important consideration for some applications. 
 
-Thus, we don't need to construct an actual quad tree in that case. We follow the same algorithm, but produce a different output from it.
+We might be okay with a "good enough" output that takes less time to perform but does not produce the minimum number of squares.
+
+In my program, there are two times to be aware of: (a) merging when the program is running, before showing the user the pixels they entered, and (b) merging when exporting to a file.
+
+In the first case, we don't need an optimal output because the output is ephemeral and does not have much of a performance impact. However, in the second case, we want to save the file to disk and later use it, so spending a bit more time makes sense.
+
+When our output is ephemeral, we can skip building the quad tree. We can follow the same process where we divide squares into quadrants, but at the level where we would normally create a Leaf, we could instead choose to insert the item into another data structure (like an array, a linked list, or a binary tree).
+
+We follow the same algorithm, but produce a different output from it.
 
 ## Code implementation
 
