@@ -65,7 +65,7 @@ For tiles, we keep dividing until every tile in this quadrant's coordinates is a
 
 For image compression, we keep dividing until every pixel in this specific quadrant has the same colour. 
 
-- If we are doing lossy compression, we have some level of tolerance for how different the colours in pixels can be. If the quadrant does not exceed this limit, we replace all of the different colours in the quadrant with just one colour.
+- If we are doing lossy compression, we have some level of tolerance for how different the pixels in a quadrant can be. If the quadrant does not exceed this limit, we replace all of the different colours in the quadrant with just one colour.
 
 The diagram below highlights this.
 
