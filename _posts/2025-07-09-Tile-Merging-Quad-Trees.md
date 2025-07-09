@@ -20,7 +20,7 @@ What is a tile? A small image repeated in a game's world to make up the environm
 
 The following screenshot from the first Mario game from the NES is illustrative. The blocks to the left of the bridge are all repeated tiles: blocks which are 8 pixels wide and 8 pixels tall.
 
-TODO: copy screenshot https://www.nintendolife.com/games/nes/super_mario_bros#enlarge-7
+![Screenshot of first Mario game for the NES containing a wall made up of tiles](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/mario-nes-tiles.png?raw=true)
 
 The other aspect of tiles is their behaviour. Some tiles are purely for ornamental purposes, but we are only concerned with tiles that have associated behaviour. For example, those grey blocks stop Mario from falling down.
 
@@ -36,7 +36,7 @@ We probably don't want to do anything about that as far as visuals are concerned
 
 The below image shows what this looks like. 
 
-TODO: merged tile image. Tile looks like one square and it actually is four squares in terms of behaviour. However, show that it is possible to merge into a single square (for behaviour).
+![Screenshot of first Mario game for the NES showing how larger objects are made from smaller tiles](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/mario-nes-tiles-2.png?raw=true)
 
 Graphically, there are four tiles. There are four squares with identical behaviour when Mario touches them.
 
@@ -69,7 +69,7 @@ For image compression, we keep dividing until every pixel in this specific quadr
 
 The diagram below highlights this.
 
-TODO: create image with different quadrants labelled (different pixel colour for each quadrant). Top right quadrant should divide one more time.
+![Diagram showing how each leaf quadrant contains a single pixel. The top right quadrant is further divided into four more quadrants, because the top right quadrant contains more than a signle pixel.](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/quadrants.png?raw=true)
 
 As shown in the diagram, quadrants have different colour values. Except for the top right quadrant, each quadrant has one colour value. 
 
@@ -111,7 +111,7 @@ Why is this? One reason is that quad tree decomposition does not merge pixels or
 
 We can clearly see this from the below diagram.
 
-TODO: add a diagram with a 4 pixel box at the centre.
+![Diagram with a 4 pixel box at the centre. The box is unintuitively regarded as 4 different items because each pixel of the box is in a different quadrant.](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/sub-optimal-quadrants.png?raw=true)
 
 In this diagram, we see a box at the very centre. 
 
