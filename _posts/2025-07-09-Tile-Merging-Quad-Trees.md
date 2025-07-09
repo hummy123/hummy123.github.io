@@ -131,4 +131,8 @@ Thus, we don't need to construct an actual quad tree in that case. We follow the
 
 ### Code
 
-TODO: add SML code for decomposing quad trees. (First: build a quad tree data structure, second: build a linked list.)
+There is a Standard ML implementation of a quad tree at the following repository. 
+
+https://github.com/hummy123/quad-tree-impl/
+
+One can write additional functions, such as point queries, using the same principles outlined in the article.
