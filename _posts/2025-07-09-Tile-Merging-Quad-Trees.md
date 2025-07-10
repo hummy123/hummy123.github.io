@@ -144,3 +144,7 @@ There is a Standard ML implementation of a quad tree at the following repository
 https://github.com/hummy123/quad-tree-impl/
 
 One can write additional functions, such as point queries, using the same principles outlined in the article.
+
+## References
+
+[Quadtree Decomposition - MATLAB & Simulink](https://www.mathworks.com/help/images/quadtree-decomposition.html)
