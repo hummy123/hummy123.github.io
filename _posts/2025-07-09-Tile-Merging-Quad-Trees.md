@@ -38,11 +38,11 @@ The below image shows what this looks like.
 
 ![Screenshot of first Mario game for the NES showing how larger objects are made from smaller tiles](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/mario-nes-tiles-2.png?raw=true)
 
-Graphically, there are four tiles. There are four squares with identical behaviour when Mario touches them.
+Graphically, there are multiple tiles. There are multiple squares with identical behaviour when Mario touches them.
 
-However, we can reduce memory usage and make our code faster if we consider (for the purposes of behaviour) that only one single square exists, spanning the size of all four squares.
+However, we can reduce memory usage and make our code faster if we consider (for the purposes of behaviour) that only one single tile exists, spanning the size of all the adjacent smaller tiles.
 
-This is the tile merging problem. We would like to consider adjacent tiles to be one larger tile.
+This is the tile merging problem. We would like to consider multiple tiles placed adjacently to be one larger tile.
 
 How do we find adjacent tiles and merge them? There are different algorithms. This blog post focuses on a surprisingly simple one using quad trees.
 
