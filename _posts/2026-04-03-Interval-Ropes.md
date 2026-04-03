@@ -20,8 +20,7 @@ It is worth noting that several alternative approaches exist. There are many str
 
 To undersand how Ropes were adapted for the kind of interval set described above, it is helpful to briefly remind ourselves about how Ropes work in the first place.
 
-![A tree showing circles with numbers an arrows to square nodes that contain text]
-(https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Initial-Rope.png)
+![A tree showing circles with numbers an arrows to square nodes that contain text](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Initial-Rope.png)
 
 The above diagram shows an image of a Rope representing the text `The_quiqk_brown_`.
 
@@ -63,8 +62,7 @@ What does the weight have to do with indexing, and why do we sometimes subtract 
 
 To answer this, we have to remember that the weight is the length of all nodes in the left subtree. If we subtract from the left subtreee's length (the weight), then our new index will be  relative to the right subtree, ignoring the length of all the strings in the left sobtree. This is exactly what we want when we recurse down the right node.
 
-![Indexing into a Rope through weight metadata]
-(https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Rope-Index.png)
+![Indexing into a Rope through weight metadata](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Rope-Index.png)
 
 In the diagram above, I have tried to show an example of using this indexing algorithm to access the fifth chaiaoter in the Rope. The steps and the node we are in at that step are correspondingly colour coded.
 
