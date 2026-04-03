@@ -1219,3 +1219,9 @@ struct
         end
 end
 ```
+
+## Using the Interval Rope
+
+Okay, we have our Interval Rope implemented now, but how do we use it to keep track of search-matches in some text?
+
+There won't be any code now; that will be an exercise to the reader.
