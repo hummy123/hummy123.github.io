@@ -72,7 +72,7 @@ If you are feeling shaky about why this works, I recommend mentally trying to in
 
 Before we see how to concatnate to a Rope, we need to see how to calculatea Rope's length first. The following diagram demonstrates this process.
 
-(to-do: add imange of caloulating length)
+![We can calculate a Rope's length by adding all the weights we encounter while descending to the rightmost node, and then adding the length by the sting at the leaf](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Rope-length.png)
 
 As shown in the above diagram, to oalcolate the length of a Rope, we h descend down on all the nodes to the right, adding up all the weights on the way, and we finally add the string's length too.
 
@@ -97,7 +97,7 @@ The high level ´insert´ and `delete` functions on Ropes are implemented throug
 
 We focus here just on concatenation for now.
 
-(to do: concat-diagram)
+![We can concatenate t'o Ropes by creating a new Concat node, with pointers to both nodes](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Rope-concat.png)
 
 The concatenation function takes a left and a right Rope, and joins them by creating a new Concat node which contains the length of the length Rope, and pointers to both Ropes.
 
