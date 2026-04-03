@@ -142,7 +142,6 @@ fun splitKeepingStart (index, rope) =
         in
           Concat (left, weight, newRight)
         end
-
 ```
 
 I have written a function to split the left section (from the start to some specified index) above. 
@@ -436,7 +435,7 @@ fun uHasIntervalAtIndex (index, rope) =
       if index < weight then
         uHasIntervalAtIndex (index, left)
       else
-        uHasIntervalAtIndex (index - weght, right)
+        uHasIntervalAtIndex (index - weight, right)
 
 fun hasIntervalAtIndex (index, rope) =
   case rope of
@@ -458,7 +457,7 @@ Instead of calculating the length like with String Ropes, we want to get the lar
 fun uLargestIdx (rope, acc) =
   case rope of
     Leaf {startIdx, endIdx} => endIdx + acc
-  | Branch (left, weight, right) =>
+  | Concat (left, weight, right) =>
       uLargestIdx (right, acc + weight)
 
 fun largestIdx rope =
@@ -479,7 +478,7 @@ We retrieve the smallest matching index by descending to the leftmost Rope, and 
 fun smallestIdx rope =
   case rope of
     Leaf {startIdx, endIdx} => startIdx
-  | Branch (left, weight, right) => smallestIdx left
+  | Concat (left, weight, right) => smallestIdx left
 ```
 
 Retrieving the smallest matching index is not part of our public API and therefore does not need to deal with the `option` type, but we might want to make it part of our public API depending on our requirements, in which case we would unwrap the `option` type.
@@ -490,7 +489,7 @@ The `concatenate` function for Interval Ropes is the same as that for String Rop
 
 ```
 fun concatenate (left, right) =
-  Concat (left, uLargestIndex left, right)
+  Concat (left, uLargestIdx (left, 0),  right)
 ```
 
 Since concatenation is an implementation detail and not part of our public API, we don't need to unwrap and pattern match against its arguments. We can make sure that we have unwrapped versions of the arguments when we make calls to it internally.
@@ -536,8 +535,8 @@ fun splitKeepingStart (index, rope) =
           val result = splitKeepingStart (index - weight, right)
         in
           case result of
-            SOME newRight => Concat (left, weight, newRight)
-          | NONE => left
+            SOME newRight => SOME (Concat (left, weight, newRight))
+          | NONE => SOME (left)
         end
 ```
 
@@ -564,8 +563,8 @@ fun splitKeepingEnd (index, rope) =
   | Concat  (left, weight, right) =>
       if index < weight then
         case splitKeepingEnd (index, left) of
-          SOME newLeft => SOME (Concat (newLeft, uLargestIdx newLeft, right))
-        | NONE => right
+          SOME newLeft => SOME (Concat (newLeft, uLargestIdx (newLeft, 0), right))
+        | NONE => SOME right
       else
         splitKeepingEnd (index - weight, right)
 ```
@@ -635,9 +634,23 @@ fun incrementAt (idx, incrementBy, rope) =
       let
         val left = splitKeepingStart (idx, rope)
         val right = splitKeepingEnd (idx, rope)
-        val newRight = increment (incrementBy, right)
       in
-        concatenate (left, newRight)
+        case (left, right) of
+          (SOME left, SOME right) =>
+           let
+             val newRight = increment (incrementBy, right)
+           in
+             SOME (concatenate (left, newRight))
+           end
+        | (SOME left, NONE) =>
+            (* nothing to increment since no intervals after index *) 
+            SOME left
+        | (NONE, SOME right) =>
+            (* just incremet right and return without concatenating, since there is no left *) 
+            SOME (increment (incrementBy, right))
+        | (NONE, NONE) =>
+            (* nothing remains after splitting, so return nothing *)
+            NONE
       end
   | NONE => NONE
 ```
@@ -667,11 +680,11 @@ In a Concat node, we use recursion to index as usual, However, if we descend dow
 This is implemented by the code below.
 
 ```
-fun smallestInterval (rope, acc)
+fun smallestInterval (rope, acc) =
   case rope of
     Leaf {startIdx, endIdx} => 
-      {startIdx = startIdx + acc, endIdx = endIdx + acc)
-  | Concat (left, weight, right) => smallestIndex (left, acc)
+      {startIdx = startIdx + acc, endIdx = endIdx + acc}
+  | Concat (left, weight, right) => smallestInterval (left, acc)
 
 fun helpNextMatch (index, rope, acc) =
   case rope of
@@ -720,7 +733,7 @@ fun helpPrevMatch (index, rope, acc) =
       else
         case helpPrevMatch (index, right, acc + weight) of
           SOME interval => SOME interval
-        | NONE => SOME (largestInterval (left, acc))
+        | NONE => largestInterval (index, left, acc)
 
 fun prevMatch (index, rope) = 
   case rope of
@@ -758,7 +771,7 @@ fun delete (index, length, rope) =
       in
         (* get next match and split rope into two halves, if possible *)
         case nextMatch (endIdx, rope) of
-          SOME matchAfterEndIdx =>
+          SOME {endIdx = matchAfterEndIdx, ...} =>
             let
               val left = splitKeepingStart (index, rope)
               val right = splitKeepingEnd (endIdx, rope)
@@ -831,8 +844,6 @@ fun insert (intervalStartIndex, intervalEndIndex, rope) =
       let
         val left = splitKeepingStart (intervalStartIndex, rope)
         val right = splitKeepingEnd (intervalEndIndex, rope)
-        val newInterval = 
-          Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
       in
         case (left, right) of
           (SOME left, SOME right) =>
@@ -841,6 +852,10 @@ fun insert (intervalStartIndex, intervalEndIndex, rope) =
               val leftEndIdx = uLargestIdx (left, 0)
               val decrementBy = intervalEndIndex - leftEndIdx
 
+              (* decrement new interval by leftEndIdx so that its relative index inside the rope is the same as the absoute index passed in as an argument *)
+              val newInterval = 
+                Leaf {startIdx = intervalStartIndex - leftEndIdx, endIdx = intervalEndIndex - leftEndIdx}
+
               val newLeft = concatenate (left, newInterval)
               val newRight = decrement (decrementBy, right)
             in
@@ -848,17 +863,29 @@ fun insert (intervalStartIndex, intervalEndIndex, rope) =
             end
         | (SOME left, NONE) =>
             (* can't split right, so just concatenate to left *)
-            SOME (concatenate (left, newInterval))
+            let
+              val newInterval = 
+                Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+            in
+              SOME (concatenate (left, newInterval))
+            end
         | (NONE, SOME right) =>
             (* decrement right by end of new interval, and then concatenate *)
             let
+              val newInterval = 
+                Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
               val newRight = decrement (intervalEndIndex, right)
             in
               SOME (concatenate (newInterval, newRight))
             end
         | (NONE, NONE) =>
             (* no intervals remain after splitting, so just return new interval *)
-            SOME newInterval
+            let
+              val newInterval = 
+                Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+            in
+              SOME newInterval
+            end
       end
   | NONE =>
       let
@@ -900,4 +927,295 @@ sig
   val insert: {startIdx: int, endIdx: int} * t -> t
 end
 
+structure IntervalRope = 
+struct
+  datatype interval_rope = 
+    Concat of interval_rope * int * interval_rope
+  | Leaf of {startIdx: int, endIdx : int}
+
+  type t = interval_rope option
+
+  fun uHasIntervalAtIndex (index, rope) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        startIdx <= index andalso endIdx >= index
+    | Concat (left, weight, right) =>
+        if index < weight then
+          uHasIntervalAtIndex (index, left)
+        else
+          uHasIntervalAtIndex (index - weight, right)
+
+  fun hasIntervalAtIndex (index, rope) =
+    case rope of
+      SOME rope => uHasIntervalAtIndex (index, rope)
+    | NONE => false
+
+  fun uLargestIdx (rope, acc) =
+  case rope of
+    Leaf {startIdx, endIdx} => endIdx + acc
+  | Concat (left, weight, right) =>
+      uLargestIdx (right, acc + weight)
+
+  fun largestIdx rope =
+    case rope of
+      SOME rope => uLargestIdx (rope, 0)
+    | NONE => 0
+
+  fun smallestIdx rope =
+    case rope of
+      Leaf {startIdx, endIdx} => startIdx
+    | Concat (left, weight, right) => smallestIdx left
+
+  fun concatenate (left, right) =
+    Concat (left, uLargestIdx (left, 0), right)
+
+  fun splitKeepingStart (index, rope) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        if index > endIdx then
+          SOME rope
+        else
+          NONE
+    | Concat (left, weight, right) =>
+        if index < weight then
+          splitKeepingStart (index, left)
+        else
+          let
+            val result = splitKeepingStart (index - weight, right)
+          in
+            case result of
+              SOME newRight => SOME (Concat (left, weight, newRight))
+            | NONE => SOME left
+          end
+
+  fun splitKeepingEnd (index, rope) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        if index < startIdx then
+          SOME rope
+        else
+          NONE
+    | Concat  (left, weight, right) =>
+        if index < weight then
+          case splitKeepingEnd (index, left) of
+            SOME newLeft => SOME (Concat (newLeft, uLargestIdx (newLeft, 0), right))
+          | NONE => SOME right
+        else
+          splitKeepingEnd (index - weight, right)
+
+  fun decrement (decrementBy, rope) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        Leaf {
+          startIdx = startIdx - decrementBy, 
+          endIdx = endIdx - decrementBy
+        }
+    | Concat (left, weight, right) =>
+        let
+          val newLeft = decrement (decrementBy, left)
+          val newWeight = weight - decrementBy
+        in
+          Concat (newLeft, newWeight, right)
+        end
+
+  fun increment (incrementBy, rope) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        Leaf {
+          startIdx = startIdx + incrementBy, 
+          endIdx = endIdx + incrementBy
+        }
+    | Concat (left, weight, right) =>
+        let
+          val newLeft = increment (incrementBy, left)
+          val newWeight = weight + incrementBy
+        in
+          Concat (newLeft, newWeight, right)
+        end
+
+  fun incrementAt (idx, incrementBy, rope) =
+    case rope of
+      SOME rope =>
+        let
+          val left = splitKeepingStart (idx, rope)
+          val right = splitKeepingEnd (idx, rope)
+        in
+          case (left, right) of
+            (SOME left, SOME right) =>
+             let
+               val newRight = increment (incrementBy, right)
+             in
+               SOME (concatenate (left, newRight))
+             end
+          | (SOME left, NONE) =>
+              (* nothing to increment since no intervals after index *) 
+              SOME left
+          | (NONE, SOME right) =>
+              (* just incremet right and return without concatenating, since there is no left *) 
+              SOME (increment (incrementBy, right))
+          | (NONE, NONE) =>
+              (* nothing remains after splitting, so return nothing *)
+              NONE
+        end
+    | NONE => NONE
+
+
+  fun smallestInterval (rope, acc) =
+    case rope of
+      Leaf {startIdx, endIdx} => 
+        {startIdx = startIdx + acc, endIdx = endIdx + acc}
+    | Concat (left, weight, right) => smallestInterval (left, acc)
+
+  fun helpNextMatch (index, rope, acc) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        if index < startIdx then
+          SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+        else
+          NONE
+    | Concat (left, weight, right) =>
+        if index < weight then
+          case helpNextMatch (index, left, acc) of
+            SOME interval => SOME interval
+          | NONE => SOME (smallestInterval (right, acc + weight))
+        else
+          helpNextMatch (index - weight, right, acc + weight)
+
+  fun nextMatch (index, rope) = helpNextMatch (index, rope, 0)
+
+  fun largestInterval (index, rope, acc) = 
+    case rope of
+      Leaf {startIdx, endIdx} => 
+        SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+    | Concat (left, weight, right) => largestInterval (index, rope, acc)
+
+  fun helpPrevMatch (index, rope, acc) =
+    case rope of
+      Leaf {startIdx, endIdx} => 
+        SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+    | Concat (left, weight, right) =>
+        if index < weight then
+          helpPrevMatch (index, left, acc)
+        else
+          case helpPrevMatch (index, right, acc + weight) of
+            SOME interval => SOME interval
+          | NONE => largestInterval (index, left, acc)
+
+  fun prevMatch (index, rope) = 
+    case rope of
+      SOME rope => helpPrevMatch (index, rope, 0)
+    | NONE => NONE
+
+  fun delete (index, length, rope) =
+    case rope of
+      SOME rope =>
+        let
+          val endIdx = index + length
+        in
+          (* get next match and split rope into two halves, if possible *)
+          case nextMatch (endIdx, rope) of
+            SOME {endIdx = matchAfterEndIdx, ...} =>
+              let
+                val left = splitKeepingStart (index, rope)
+                val right = splitKeepingEnd (endIdx, rope)
+              in
+                case (left, right) of
+                  (SOME left, SOME right) =>
+                    (* can split into two halves *)
+                    let
+                      (* calculate absolute index of interval at start of right rope *)
+                      val leftEndIdx = uLargestIdx (left, 0)
+                      val rightStartIdx = smallestIdx right + leftEndIdx
+
+                      (* calculate length to decremens by *)
+                      val newRightStartIdx = matchAfterEndIdx - rightStartIdx
+                      val decrementBy = newRightStartIdx - rightStartIdx
+                    in
+                      (* decrement right, and then concatenate it with left *)
+                      SOME (concatenate (
+                        left, 
+                        decrement (decrementBy, right)
+                      ))
+                    end
+                | (SOME left, NONE) => 
+                    (* return left, because there is no interval in right, ss nothing to decrement *)
+                    SOME left
+                | (NONE, SOME right) =>
+                    let
+                      (* calculate how much to decrement by, and then decrement without joining, because there are no intetvals to join with in left *)
+                      val rightStartIdx = smallestIdx right
+                      val newRightStartIdx = matchAfterEndIdx - rightStartIdx
+                      val decrementBy = newRightStartIdx - rightStartIdx
+                    in
+                      SOME (decrement (decrementBy, rope))
+                    end
+                | (NONE, NONE) => 
+                    (* no valid intervals in left or right, so return NONE *)
+                    NONE
+              end
+          | NONE => 
+              (* no matches to decremens after endIdx, so just split left *)
+              splitKeepingStart (index, rope)
+        end
+    | NONE => 
+        (* rope is empty, so there are no intervals to delete, so return NONE *)
+        NONE
+
+  fun insert (intervalStartIndex, intervalEndIndex, rope) =
+    case rope of
+      SOME rope =>
+        let
+          val left = splitKeepingStart (intervalStartIndex, rope)
+          val right = splitKeepingEnd (intervalEndIndex, rope)
+        in
+          case (left, right) of
+            (SOME left, SOME right) =>
+              (* can split into two halves *)
+              let
+                val leftEndIdx = uLargestIdx (left, 0)
+                val decrementBy = intervalEndIndex - leftEndIdx
+  
+                (* decrement new interval by leftEndIdx so that its relative index inside the rope is the same as the absoute index passed in as an argument *)
+                val newInterval = 
+                  Leaf {startIdx = intervalStartIndex - leftEndIdx, endIdx = intervalEndIndex - leftEndIdx}
+  
+                val newLeft = concatenate (left, newInterval)
+                val newRight = decrement (decrementBy, right)
+              in
+                SOME (concatenate (newLeft, newRight))
+              end
+          | (SOME left, NONE) =>
+              (* can't split right, so just concatenate to left *)
+              let
+                val newInterval = 
+                  Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+              in
+                SOME (concatenate (left, newInterval))
+              end
+          | (NONE, SOME right) =>
+              (* decrement right by end of new interval, and then concatenate *)
+              let
+                val newInterval = 
+                  Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+                val newRight = decrement (intervalEndIndex, right)
+              in
+                SOME (concatenate (newInterval, newRight))
+              end
+          | (NONE, NONE) =>
+              (* no intervals remain after splitting, so just return new interval *)
+              let
+                val newInterval = 
+                  Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+              in
+                SOME newInterval
+              end
+        end
+    | NONE =>
+        let
+          val newInterval = 
+            Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+        in
+          SOME newInterval
+        end
+end
 ```
