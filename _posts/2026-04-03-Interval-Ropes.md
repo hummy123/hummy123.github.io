@@ -432,7 +432,7 @@ fun uHasIntervalAtIndex (index, rope) =
     Leaf {startIdx, endIdx} =>
       startIdx <= index andalso endIdx >= index
   | Concat (left, weight, right) =>
-      if index < weight then
+      if index <= weight then
         uHasIntervalAtIndex (index, left)
       else
         uHasIntervalAtIndex (index - weight, right)
@@ -940,7 +940,7 @@ struct
       Leaf {startIdx, endIdx} =>
         startIdx <= index andalso endIdx >= index
     | Concat (left, weight, right) =>
-        if index < weight then
+        if index <= weight then
           uHasIntervalAtIndex (index, left)
         else
           uHasIntervalAtIndex (index - weight, right)
