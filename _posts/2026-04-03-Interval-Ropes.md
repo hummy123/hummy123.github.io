@@ -864,8 +864,9 @@ fun insert (intervalStartIndex, intervalEndIndex, rope) =
         | (SOME left, NONE) =>
             (* can't split right, so just concatenate to left *)
             let
+              val leftEndIdx = uLargestIdx (left, 0)
               val newInterval = 
-                Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+                Leaf {startIdx = intervalStartIndex - leftEndIdx, endIdx = intervalEndIndex - leftEndIdx}
             in
               SOME (concatenate (left, newInterval))
             end
@@ -1187,8 +1188,9 @@ struct
           | (SOME left, NONE) =>
               (* can't split right, so just concatenate to left *)
               let
+                val leftEndIdx = uLargestIdx (left, 0)
                 val newInterval = 
-                  Leaf {startIdx = intervalStartIndex, endIdx = intervalEndIndex}
+                  Leaf {startIdx = intervalStartIndex - leftEndIdx, endIdx = intervalEndIndex - leftEndIdx}
               in
                 SOME (concatenate (left, newInterval))
               end
