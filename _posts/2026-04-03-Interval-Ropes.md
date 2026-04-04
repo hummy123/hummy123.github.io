@@ -1119,6 +1119,7 @@ struct
               let
                 val left = splitKeepingStart (index, rope)
                 val right = splitKeepingEnd (endIdx, rope)
+                val newRightStartIdx = matchAfterEndIdx - length
               in
                 case (left, right) of
                   (SOME left, SOME right) =>
@@ -1129,7 +1130,6 @@ struct
                       val rightStartIdx = smallestIdx right + leftEndIdx
 
                       (* calculate length to decremens by *)
-                      val newRightStartIdx = matchAfterEndIdx - rightStartIdx
                       val decrementBy = newRightStartIdx - rightStartIdx
                     in
                       (* decrement right, and then concatenate it with left *)
@@ -1145,7 +1145,6 @@ struct
                     let
                       (* calculate how much to decrement by, and then decrement without joining, because there are no intetvals to join with in left *)
                       val rightStartIdx = smallestIdx right
-                      val newRightStartIdx = matchAfterEndIdx - rightStartIdx
                       val decrementBy = newRightStartIdx - rightStartIdx
                     in
                       SOME (decrement (decrementBy, rope))
