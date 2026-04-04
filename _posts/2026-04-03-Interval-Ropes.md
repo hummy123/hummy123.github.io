@@ -598,7 +598,7 @@ fun decrement (decrementBy, rope) =
   | Concat (left, weight, right) =>
       let
         val newLeft = decrement (decrementBy, left)
-        val newWeight = weight - decrementBy
+        val newWeight = uLargestIdx (newLeft, 0)
       in
         Concat (newLeft, newWeight, right)
       end
@@ -619,7 +619,7 @@ fun increment (incrementBy, rope) =
   | Concat (left, weight, right) =>
       let
         val newLeft = increment (incrementBy, left)
-        val newWeight = weight + incrementBy
+        val newWeight = uLargestIdx (newLeft, 0)
       in
         Concat (newLeft, newWeight, right)
       end
@@ -1218,6 +1218,13 @@ struct
           SOME newInterval
         end
 end
+
+(* insertion tests *)                                                 val r1 = IntervalRope.insert (7, 9, NONE)                             fun r1Tests rope =                                                      not (IntervalRope.hasIntervalAtIndex (6, rope)) andalso               not (IntervalRope.hasIntervalAtIndex (10, rope)) andalso              IntervalRope.hasIntervalAtIndex (7, rope) andalso                     IntervalRope.hasIntervalAtIndex (8, rope) andalso                     IntervalRope.hasIntervalAtIndex (9, rope)                           val r1Pass = r1Tests r1                                                                                                                     val r2 = IntervalRope.insert (1, 1, r1)                               fun r2Tests rope =                                                      not (IntervalRope.hasIntervalAtIndex (0, rope)) andalso               not (IntervalRope.hasIntervalAtIndex (2, rope)) andalso               IntervalRope.hasIntervalAtIndex (1, rope) andalso                     r1Tests rope                                                        val r2Pass = r2Tests r2                                                                                                                     val r3 = IntervalRope.insert (3, 5, r2)                               fun r3Tests rope =                                                      not (IntervalRope.hasIntervalAtIndex (2, rope)) andalso               not (IntervalRope.hasIntervalAtIndex (6, rope)) andalso               IntervalRope.hasIntervalAtIndex (3, rope) andalso                     IntervalRope.hasIntervalAtIndex (4, rope) andalso
+  IntervalRope.hasIntervalAtIndex (5, rope) andalso
+  r2Tests rope
+val r3Pass = r3Tests r3
+
+val r4 = IntervalRope.insert (13, 15, r3)                             fun r4Tests rope =                                                      not (IntervalRope.hasIntervalAtIndex (12, rope)) andalso              not (IntervalRope.hasIntervalAtIndex (16, rope)) andalso              IntervalRope.hasIntervalAtIndex (13, rope) andalso                    IntervalRope.hasIntervalAtIndex (14, rope) andalso                    IntervalRope.hasIntervalAtIndex (15, rope) andalso                    r3Tests rope                                                        val r4Pass = r4Tests r4                                                                                                                                                                                           (* deletion tests *)                                                  (* decrements last interval from 13-15 by 1, changing it to 12-14 *)  val r5 = IntervalRope.delete (11, 1, r4)                              val r5Pass =                                                            IntervalRope.hasIntervalAtIndex (12, r5) andalso                      IntervalRope.hasIntervalAtIndex (13, r5) andalso                      IntervalRope.hasIntervalAtIndex (14, r5) andalso                      not (IntervalRope.hasIntervalAtIndex (11, r5)) andalso                not (IntervalRope.hasIntervalAtIndex (15, r5))
 ```
 
 ## Using the Interval Rope
