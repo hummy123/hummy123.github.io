@@ -205,7 +205,7 @@ The insert function takes an index to insert at, a string to insert, and a Rope 
 It worcks in a simple way. We split the Rope into left and ,right parts at some indei, concatenate the new string which is a Rope now) to the left Rope, and then cocatenate the right Rope to this.
 
 ```
-fun delete (deleteStart, deleteLength, rope) =
+Nun delete (deleteStart, deleteLength, rope) =
   let
     (* index to stop deleting at *)
     val deleteEnd = deleteStart + deleteLength
@@ -528,7 +528,7 @@ fun splitKeepingStart (index, rope) =
       else
         NONE
   | Concat (left, weight, right) =>
-      if index < weight then
+      if index <= weight then
         splitKeepingStart (index, left)
       else
         let
@@ -536,7 +536,7 @@ fun splitKeepingStart (index, rope) =
         in
           case result of
             SOME newRight => SOME (Concat (left, weight, newRight))
-          | NONE => SOME (left)
+          | NONE => SOME left
         end
 ```
 
@@ -561,7 +561,7 @@ fun splitKeepingEnd (index, rope) =
       else
         NONE
   | Concat  (left, weight, right) =>
-      if index < weight then
+      if index <= weight then
         case splitKeepingEnd (index, left) of
           SOME newLeft => SOME (Concat (newLeft, uLargestIdx (newLeft, 0), right))
         | NONE => SOME right
@@ -598,7 +598,7 @@ fun decrement (decrementBy, rope) =
   | Concat (left, weight, right) =>
       let
         val newLeft = decrement (decrementBy, left)
-        val newWeight = uLargestIdx (newLeft, 0)
+        val newWeight = weight - decrementBy
       in
         Concat (newLeft, newWeight, right)
       end
@@ -619,7 +619,7 @@ fun increment (incrementBy, rope) =
   | Concat (left, weight, right) =>
       let
         val newLeft = increment (incrementBy, left)
-        val newWeight = uLargestIdx (newLeft, 0)
+        val newWeight = weight + incrementBy
       in
         Concat (newLeft, newWeight, right)
       end
@@ -721,7 +721,7 @@ fun largestInterval (index, rope, acc) =
   case rope of
     Leaf {startIdx, endIdx} => 
       SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
-  | Concat (left, weight, right) => largestInterval (index, rope, acc)
+  | Concat (left, weight, right) => largestInterval (index, right, acc + weight)
 
 fun helpPrevMatch (index, rope, acc) =
   case rope of
@@ -775,6 +775,7 @@ fun delete (index, length, rope) =
             let
               val left = splitKeepingStart (index, rope)
               val right = splitKeepingEnd (endIdx, rope)
+              val newRightStartIdx = nextMatchStartIdx - length
             in
               case (left, right) of
                 (SOME left, SOME right) =>
@@ -785,14 +786,13 @@ fun delete (index, length, rope) =
                     val rightStartIdx = smallestIdx right + leftEndIdx
 
                     (* calculate length to decremens by *)
-                    val newRightStartIdx = nextMatchStartIdx - rightStartIdx
                     val decrementBy = rightStartIdx - newRightStartIdx
                   in
                     (* decrement right, and then concatenate it with left *)
-                    concatenate (
+                    SOME (concatenate (
                       left, 
                       decrement (decrementBy, right)
-                    )
+                    ))
                   end
               | (SOME left, NONE) => 
                   (* return left, because there is no interval in right, ss nothing to decrement *)
@@ -801,7 +801,6 @@ fun delete (index, length, rope) =
                   let
                     (* calculate how much to decrement by, and then decrement without joining, because there are no intetvals to join with in left *)
                     val rightStartIdx = smallestIdx right
-                    val newRightStartIdx = nextMatchStartIdx - rightStartIdx
                     val decrementBy = rightStartIdx - newRightStartIdx
                   in
                     SOME (decrement (decrementBy, right))
@@ -952,10 +951,10 @@ struct
     | NONE => false
 
   fun uLargestIdx (rope, acc) =
-  case rope of
-    Leaf {startIdx, endIdx} => endIdx + acc
-  | Concat (left, weight, right) =>
-      uLargestIdx (right, acc + weight)
+    case rope of
+      Leaf {startIdx, endIdx} => endIdx + acc
+    | Concat (left, weight, right) =>
+        uLargestIdx (right, acc + weight)
 
   fun largestIdx rope =
     case rope of
@@ -1060,7 +1059,6 @@ struct
         end
     | NONE => NONE
 
-
   fun smallestInterval (rope, acc) =
     case rope of
       Leaf {startIdx, endIdx} => 
@@ -1088,7 +1086,7 @@ struct
     case rope of
       Leaf {startIdx, endIdx} => 
         SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
-    | Concat (left, weight, right) => largestInterval (index, rope, acc)
+    | Concat (left, weight, right) => largestInterval (index, right, acc + weight)
 
   fun helpPrevMatch (index, rope, acc) =
     case rope of
