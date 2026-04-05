@@ -771,7 +771,7 @@ fun delete (index, length, rope) =
       in
         (* get next match and split rope into two halves, if possible *)
         case nextMatch (endIdx, rope) of
-          SOME {endIdx = matchAfterEndIdx, ...} =>
+          SOME {startIdx = nextMatchStartIdx, ...} =>
             let
               val left = splitKeepingStart (index, rope)
               val right = splitKeepingEnd (endIdx, rope)
@@ -785,8 +785,8 @@ fun delete (index, length, rope) =
                     val rightStartIdx = smallestIdx right + leftEndIdx
 
                     (* calculate length to decremens by *)
-                    val newRightStartIdx = matchAfterEndIdx - rightStartIdx
-                    val decrementBy = newRightStartIdx - rightStartIdx
+                    val newRightStartIdx = nextMatchStartIdx - rightStartIdx
+                    val decrementBy = rightStartIdx - newRightStartIdx
                   in
                     (* decrement right, and then concatenate it with left *)
                     concatenate (
@@ -801,10 +801,10 @@ fun delete (index, length, rope) =
                   let
                     (* calculate how much to decrement by, and then decrement without joining, because there are no intetvals to join with in left *)
                     val rightStartIdx = smallestIdx right
-                    val newRightStartIdx = matchAfterEndIdx - rightStartIdx
-                    val decrementBy = newRightStartIdx - rightStartIdx
+                    val newRightStartIdx = nextMatchStartIdx - rightStartIdx
+                    val decrementBy = rightStartIdx - newRightStartIdx
                   in
-                    decrement (decrementBy, rope)
+                    SOME (decrement (decrementBy, right))
                   end
               | (NONE, NONE) => 
                   (* no valid intervals in left or right, so return NONE *)
@@ -1115,11 +1115,11 @@ struct
         in
           (* get next match and split rope into two halves, if possible *)
           case nextMatch (endIdx, rope) of
-            SOME {endIdx = matchAfterEndIdx, ...} =>
+            SOME {startIdx = nextMatchStartIdx, ...} =>
               let
                 val left = splitKeepingStart (index, rope)
                 val right = splitKeepingEnd (endIdx, rope)
-                val newRightStartIdx = matchAfterEndIdx - length
+                val newRightStartIdx = nextMatchStartIdx - length
               in
                 case (left, right) of
                   (SOME left, SOME right) =>
@@ -1130,7 +1130,7 @@ struct
                       val rightStartIdx = smallestIdx right + leftEndIdx
 
                       (* calculate length to decremens by *)
-                      val decrementBy = newRightStartIdx - rightStartIdx
+                      val decrementBy = rightStartIdx - newRightStartIdx
                     in
                       (* decrement right, and then concatenate it with left *)
                       SOME (concatenate (
@@ -1145,9 +1145,9 @@ struct
                     let
                       (* calculate how much to decrement by, and then decrement without joining, because there are no intetvals to join with in left *)
                       val rightStartIdx = smallestIdx right
-                      val decrementBy = newRightStartIdx - rightStartIdx
+                      val decrementBy = rightStartIdx - newRightStartIdx
                     in
-                      SOME (decrement (decrementBy, rope))
+                      SOME (decrement (decrementBy, right))
                     end
                 | (NONE, NONE) => 
                     (* no valid intervals in left or right, so return NONE *)
@@ -1230,7 +1230,10 @@ fun r1Tests rope =
   IntervalRope.hasIntervalAtIndex (9, rope)
 val r1Pass = r1Tests r1                                                                                                                     val r2 = IntervalRope.insert (1, 1, r1)
 fun r2Tests rope =
-  not (IntervalRope.hasIntervalAtIndex (0, rope)) andalso               not (IntervalRope.hasIntervalAtIndex (2, rope)) andalso               IntervalRope.hasIntervalAtIndex (1, rope) andalso                     r1Tests rope
+  not (IntervalRope.hasIntervalAtIndex (0, rope)) andalso
+  not (IntervalRope.hasIntervalAtIndex (2, rope)) andalso
+  IntervalRope.hasIntervalAtIndex (1, rope) andalso
+  r1Tests rope
 val r2Pass = r2Tests r2
 
 val r3 = IntervalRope.insert (3, 5, r2)
