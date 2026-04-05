@@ -978,7 +978,7 @@ struct
         else
           NONE
     | Concat (left, weight, right) =>
-        if index < weight then
+        if index <= weight then
           splitKeepingStart (index, left)
         else
           let
@@ -997,7 +997,7 @@ struct
         else
           NONE
     | Concat  (left, weight, right) =>
-        if index < weight then
+        if index <= weight then
           case splitKeepingEnd (index, left) of
             SOME newLeft => SOME (Concat (newLeft, uLargestIdx (newLeft, 0), right))
           | NONE => SOME right
@@ -1232,69 +1232,48 @@ struct
 
   fun toList rope =
     case rope of
-      SOME rope => helpToList (rope, [), 0)
+      SOME rope => helpToList (rope, [], 0)
     | NONE => []
 end
 
 (* insertion tests *)
 val r1 = IntervalRope.insert (7, 9, NONE)
-fun r1Tests rope = 
-  not (IntervalRope.hasIntervalAtIndex (6, rope)) andalso
-  not (IntervalRope.hasIntervalAtIndex (10, rope)) andalso
-  IntervalRope.hasIntervalAtIndex (7, rope) andalso
-  IntervalRope.hasIntervalAtIndex (8, rope) andalso
-  IntervalRope.hasIntervalAtIndex (9, rope)
-val r1Pass = r1Tests r1                                                                                                                     val r2 = IntervalRope.insert (1, 1, r1)
-fun r2Tests rope =
-  not (IntervalRope.hasIntervalAtIndex (0, rope)) andalso
-  not (IntervalRope.hasIntervalAtIndex (2, rope)) andalso
-  IntervalRope.hasIntervalAtIndex (1, rope) andalso
-  r1Tests rope
-val r2Pass = r2Tests r2
+val r1Pass = 
+  IntervalRope.toList r1 = [{startIdx = 7, endIdx = 9}]
+
+val r2 = IntervalRope.insert (1, 1, r1)
+val r2Pass = 
+  IntervalRope.toList r2 = [{startIdx = 1, endIdx = 1}, {startIdx = 7, endIdx = 9}]
 
 val r3 = IntervalRope.insert (3, 5, r2)
-fun r3Tests rope =
-  not (IntervalRope.hasIntervalAtIndex (2, rope)) andalso
-  not (IntervalRope.hasIntervalAtIndex (6, rope)) andalso
-  IntervalRope.hasIntervalAtIndex (3, rope) andalso
-  IntervalRope.hasIntervalAtIndex (4, rope) andalso
-  IntervalRope.hasIntervalAtIndex (5, rope) andalso
-  r2Tests rope
-val r3Pass = r3Tests r3
+val r3Pass =
+  IntervalRope.toList r3 = [{startIdx = 1, endIdx = 1}, {startIdx = 3, endIdx = 5}, {startIdx = 7, endIdx = 9}]
 
-val r4 = IntervalRope.insert (13, 15, r3)                             fun r4Tests rope =
-  not (IntervalRope.hasIntervalAtIndex (12, rope)) andalso
-  not (IntervalRope.hasIntervalAtIndex (16, rope)) andalso
-  IntervalRope.hasIntervalAtIndex (13, rope) andalso
-  IntervalRope.hasIntervalAtIndex (14, rope) andalso
-  IntervalRope.hasIntervalAtIndex (15, rope) andalso
-  r3Tests rope
-val r4Pass = r4Tests r4
+val r4 = IntervalRope.insert (13, 15, r3)
+val r4Pass = 
+  IntervalRope.toList r4 = [{startIdx = 1, endIdx = 1}, {startIdx = 3, endIdx = 5}, {startIdx = 7, endIdx = 9}, {startIdx = 13, endIdx = 15}]
 
 (* deletion tests *)
 (* decrements last interval from 13-15 by 1, changing it to 12-14 *)
 val r5 = IntervalRope.delete (11, 1, r4)
 val r5Pass =  
-  IntervalRope.hasIntervalAtIndex (12, r5) andalso
-  IntervalRope.hasIntervalAtIndex (13, r5) andalso
-  IntervalRope.hasIntervalAtIndex (14, r5) andalso
-  not (IntervalRope.hasIntervalAtIndex (11, r5)) andalso
-  not (IntervalRope.hasIntervalAtIndex (15, r5))
+  IntervalRope.toList r5 = [{startIdx = 1, endIdx = 1}, {startIdx = 3, endIdx = 5}, {startIdx = 7, endIdx = 9}, {startIdx = 12, endIdx = 14}]
 
 (* deletes last interval *)
 val r6 = IntervalRope.delete (11, 5, r4)
 val r6Pass =
-  not (IntervalRope.hasIntervalAtIndex (12, r6) orelse
-  IntervalRope.hasIntervalAtIndex (13, r6) orelse
-  IntervalRope.hasIntervalAtIndex (14, r6))
+  IntervalRope.toList r6 = [{startIdx = 1, endIdx = 1}, {startIdx = 3, endIdx = 5}, {startIdx = 7, endIdx = 9}]
 
 (* deletes first interval and decrements subsequent ones *) 
 val r7 = IntervalRope.delete (1, 1, r4)
 val r7Pass =
-  IntervalRope.hasIntervalAtIndex (12, r7) andalso
-  IntervalRope.hasIntervalAtIndex (13, r7) andalso
-  IntervalRope.hasIntervalAtIndex (14, r7) andalso
-  not (IntervalRope.hasIntervalAtIndex (0, r7))
+  IntervalRope.toList r7 = [{startIdx = 2, endIdx = 4}, {startIdx = 6, endIdx =
+  8}, {startIdx = 12, endIdx = 14}]
+
+(* deletes middle interval and decrements subsequent ones *) 
+val r8 = IntervalRope.delete (3, 2, r4)
+val r8Pass =
+  IntervalRope.toList r8 = [{startIdx = 1, endIdx = 1}, {startIdx = 5, endIdx = 7}, {startIdx = 11, endIdx = 13}]
 ```
 
 ## Using the Interval Rope
