@@ -1218,6 +1218,22 @@ struct
         in
           SOME newInterval
         end
+
+  fun helpToList (rope, listAcc, weightAcc) =
+    case rope of
+      Leaf {startIdx, endIdx} =>
+        {startIdx = startIdx + weightAcc, endIdx = endIdx + weightAcc} :: listAcc
+    | Concat (left, weight, right) =>
+        let
+          val listAcc = helpToList (right, listAcc, weightAcc + weight)
+        in
+          helpToList (left, listAcc, weightAcc)
+        end
+
+  fun toList rope =
+    case rope of
+      SOME rope => helpToList (rope, [), 0)
+    | NONE => []
 end
 
 (* insertion tests *)
