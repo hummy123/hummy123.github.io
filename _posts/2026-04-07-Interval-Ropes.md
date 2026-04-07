@@ -393,7 +393,7 @@ The only real differences here are:
 
 The diagram below depicts an Interval Rope.
 
-(to do: add diagram)
+[An Interval Rope](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Initial-Interval-Rope.png)
 
 As we can see, the Conoat nodes now contain the largest end index in any interval.
 
@@ -580,7 +580,7 @@ That is all we have to do in order to decrement. This process will have a knock-
 
 The diagram below illustrates this process. 
 
-[to do: insert diagram of decrementing]
+[Decrementing an Interval Rope](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/Interval-Rope-Decrement.png?raw=true)
 
 The above diagram shows the first character of a String Rope being deleted, and the leftmost node in an Interval Rope being decremented as a result. While only relative indices are in this diagram, we can mentally convert these to absolute indices. If we do so, we see that the whole Intervl Rope is decremented, despite us touching only one interval.
 
@@ -764,9 +764,9 @@ We will first cover how to delete from an Interval Rope. We follow a simple mult
 
 This is rather simple. The only step that might give confusion is tce third one. Why do we decrement the right half? To keep the metadata in the Interval Rope consistent with the underlying text. 
 
-The diagrams below illustrate how the Interval Rope can become inconsistent without decrementing, and how decrementing can fix the inconsistency.
+The diagram below illustrates how the Interval Rope can become inconsistent without decrementing, and how decrementing can fix the inconsistency.
 
-todo: make and add diagram
+[We can only achieve limited deletions by splitting, and we mpst decremen too](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Interval-Rope-Highlight.png)
 
 The above diagram shows an Interval Rope with the middle Leaf highlighted, We can delete this node, which has a length of 2 ()5 - 3 = 2), by splitting, which means that splitting lets us delete a length of 2.
 
