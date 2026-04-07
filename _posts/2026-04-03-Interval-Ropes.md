@@ -410,9 +410,9 @@ sig
 
   val prevMatch: int * t -> {startIdx: int, endIdx: int} option
 
-  val incrementAt: {index: int, length: int} * t -> t
+  val incrementAt: int * int * t -> t
 
-  val delete: {startIdx: int, endIdx: int} * t -> t
+  val delete: int * int * t -> t
 
   val insert: {startIdx: int, endIdx: int} * t -> t
 end
@@ -420,9 +420,12 @@ end
 
 ### Indexing Into an Interval Rope
 
-There is only one difference in how indexing works.
+There are two differences in how indexing works.
 
-When we are at a Leaf, we check if our current index is within the interval here, returning true if so or false if not.
+1. When we are at a Leaf, we check if our current index is within the interval here, returning true if so or false if not.
+  - We previously returned a character instead of a boolean when indexing into String Ropes
+2. Since the Interval Rope's weight is the largest index, we descend down the left node if our index argument is less than or equal to the weight. 
+  - This is different from how we index String Ropes because the weight of a String Rope is a length number rather than an actual index in the string.
 
 The following code indexes into an Interval Rope to cheok if the index is contained in any interval.
 
@@ -443,11 +446,7 @@ fun hasIntervalAtIndex (index, rope) =
   | NONE => false
 ```
 
-With the code samples for the Interval Rope, the high-level functions in the public API always pattern match on the option type and delegate the actual logic to a helper function. The names of the helper functions will always start with `u`, meaning `unwrapped``.
-
-The other difference from our previous indexing function is that the Leaf case returns a boolean indicating whether the index is in any interval, instead of returning a character.
-
-Except for these two differences, this is exactly the same as the original indexing code and algorithm we had for String Ropes.
+With the code samples for the Interval Rope, the high-level functions in the public API always pattern match on the option type and delegate the actual logic to a helper function. The names of the helper functions will often start with `u`, meaning `unwrapped``.
 
 ### Retrieving the Largest Matching Index
 
@@ -499,7 +498,7 @@ Since concatenation is an implementation detail and not part of our public API, 
 We can split Interval Ropes using a method similar to the one we used for splitting String Ropes. However, there are a few edge cases we need to handle for each splitting function.
 
 - The given index may not include the interval at the Leaf node. We signal this by returning an `option` type.
-- We have to handle the `NONE` case in `Concat` nodes. We may decide to delete the `Concat` node depending on the split direction, or we might return the subtree we did not descend down.
+- We have to handle the `NONE` case in recursive calls from Concat nodes. We may decide to delete the `Concat` node depending on the split direction, or we might return the subtree we did not descend down.
 
 These constraints are quite abstract. Let's make them concrete by discussing each split function separately.
 
@@ -515,7 +514,7 @@ The second reason is more use-case dependent. In my use case where I want to kee
 
 In any event, the way that we handle the `option` type in Concat nodes remains the same, regardless of our use case. The Concat node needs to be adjusted to handle the `option` type.
 
-- When we receive a `NONE` result after descending down on the right child, we return this Concat node`s left child. We do this because the right child contains no intervals prior to the given index, but the left child does, so we only keep the right child.
+- When we receive a `NONE` result after descending down on the right child, we return this Concat node`s left child. We do this because the right child contains no intervals prior to the given index, but the left child does, so we only keep the left child.
 - When we receive a `SOME` result after descending down on the right child, we replace the current right child with the subtree in the result.
 - When we descend down the left child, we immediately return whatever result our recursion has given us, whether that is `SOME` or `NONE`. In the `NONE` case, we want to tell the parent that there were no intervals in the left child and this Concat node is to be deleted. In the `SOME` case, we want to tell the parent to only keep the result of descending down the left subtree, discarding the right child. Returning the result immediately accomplishes both of these.
 
@@ -573,7 +572,9 @@ fun splitKeepingEnd (index, rope) =
 
 The introduction to this post explained the need for incrementing and decrementing an Interval Rope for the use case in question. When text is deleted from our string (or other text data structure), we want to decrement matches that appear after the deletion point, by the length of text that was deleted. Similarly, inserting a character before a match should cause match indices to be incremented.
 
-The idea for decrementing an Interval Rope is simple. For Concat nodes, we subtract the weight (which stores the left subtree's length) by some amount, until we reach the Leaf node. For Leaf nodes, we subtract the `startIdx' and 'endIdx' by some amount. 
+The idea for decrementing an Interval Rope is as follows:
+- For Leaf nodes, we subtract the `startIdx' and 'endIdx' by some amount. 
+- For Concat nodes, we recurse down the left child. When the recursive call returns, we call `uLargestIdx` to get the left child's new weight, and then we return the new left child with the new weight and the old right child. 
 
 That is all we have to do in order to decrement. This process will have a knock-on effect on all the other nodes in the Interval Rope too, where the absolute indices they represent are also decreemented, although we did not touch those other intervals or nodes.
 
@@ -581,9 +582,9 @@ The diagram below illustrates this process.
 
 [to do: insert diagram of decrementing]
 
-The above diagram shows the first character of a String Rope being deleted, and how the process of decrementing has knock-on effects on the absolute indices represented by subsequent intervals.
+The above diagram shows the first character of a String Rope being deleted, and the leftmost node in an Interval Rope being decremented as a result. While only relative indices are in this diagram, we can mentally convert these to absolute indices. If we do so, we see that the whole Intervl Rope is decremented, despite us touching only one interval.
 
-Remember the relative indexing system for Ropes: the absolute index can be calculated by summing all the weights on the path (where we descend to the left child) to the Leaf node in question, and then summing the index at the Leaf node. This property is what creates the knock-on effect we observe here.
+Remember the relative indexing system for Ropes: the absolute index can be calculated by summing all the weights on the path (only when we descend to the right child) to the Leaf node in question, and then summing the index at the Leaf node. This property is what creates the knock-on effect we observe here.
 
 Code that implements the decrement function is below.
 
@@ -714,7 +715,11 @@ In a Leaf node, we return `SOME` if the argument index is greater than the inter
 
 In a Concat node, if we recurse down the right child and see that the result is `NONE`, we return the largest interval in the left child.
 
-The code below implements this. 
+The meaning of these two rules is: if the cursor is after the interval's start, then return this interval; otherwise, return the previous interval if one exists.
+
+The way we handle the Leaf case here is different than when retrieving the next match, because the interval we retrieve may contain the argument index we pass to it, while that will never when retrieving the next match.
+
+The code below implements the `prevMatch` function. 
 
 ```
 fun largestInterval (index, rope, acc) = 
@@ -726,7 +731,10 @@ fun largestInterval (index, rope, acc) =
 fun helpPrevMatch (index, rope, acc) =
   case rope of
     Leaf {startIdx, endIdx} => 
-      SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+      if index > startIdx then
+        SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+      else
+        NONE
   | Concat (left, weight, right) =>
       if index < weight then
         helpPrevMatch (index, left, acc)
@@ -749,9 +757,9 @@ Since getting the previous match is part of the public API, we unwrap the Rope f
 
 We will first cover how to delete from an Interval Rope. We follow a simple multi-step process:
 
-1. We get the next match, after the deletion point's end
+1. We get the next match's `startIdx`, after the deletion point's end
 2. We split the Interval Rope into left and right halves
-3. We decrement the right half so that it is equal to the match index we got in step 1, minus the length of the deletion
+3. We decrement the right half so that its absolute index is equal to the match index we got in step 1, minus the length of the deletion
 4. We concatenate the left half with the new right half and return it
 
 This is rather simple. The only step that might give confusion is tce third one. Why do we decrement the right half? To keep the metadata in the Interval Rope consistent with the underlying text. 
@@ -759,6 +767,10 @@ This is rather simple. The only step that might give confusion is tce third one.
 The diagrams below illustrate how the Interval Rope can become inconsistent without decrementing, and how decrementing can fix the inconsistency.
 
 todo: make and add diagram
+
+The above diagram shows an Interval Rope with the middle Leaf highlighted, We can delete this node, which has a length of 2 ()5 - 3 = 2), by splitting, which means that splitting lets us delete a length of 2.
+
+What if we wanted to delete a length of 3 instead though? Splitting won't let us do that, but splitting (thus deleiting 2) and then decrmenting the first node in the right split by 1 will. This is th ,reason for our decremnting.
 
 The code below implements the delete function. There is some trivial edge-case handling that is not described in the steps above.
 
@@ -896,7 +908,7 @@ fun insert (intervalStartIndex, intervalEndIndex, rope) =
       end
 ```
 
-The code above does have some edge cases which are commented. The only edge case which is a little tricky to understand is when we can get a right by splitting, but not a left half.
+The code above does have some edge cases which are commented. The only edge case which might be a little tricky to understand is when we can get a right by splitting, but not a left half.
 
 In that case, we can consider that the right half implicity has a weight of 0 to the left, and that concatenating the new interval to the left will cause the weight to be incremented by the new interval's end index. 
 
@@ -914,26 +926,28 @@ signature INTERVAL_ROPE =
 sig
   type t
 
-  val fromInterval: {startIdx: int, endIdx: int} -> t
+  val empty: t
 
   val hasIntervalAtIndex: int * t -> bool
 
   val prevMatch: int * t -> {startIdx: int, endIdx: int} option
 
-  val incrementAt: {index: int, length: int} * t -> t
+  val incrementAt: int * int * t -> t
 
-  val delete: {startIdx: int, endIdx: int} * t -> t
+  val delete: int * int * t -> t
 
-  val insert: {startIdx: int, endIdx: int} * t -> t
+  val insert: int * int * t -> t
 end
 
-structure IntervalRope = 
+structure IntervalRope :> INTERVAL_ROPE = 
 struct
   datatype interval_rope = 
     Concat of interval_rope * int * interval_rope
   | Leaf of {startIdx: int, endIdx : int}
 
   type t = interval_rope option
+
+  val empty: t = NONE
 
   fun uHasIntervalAtIndex (index, rope) =
     case rope of
@@ -1091,7 +1105,10 @@ struct
   fun helpPrevMatch (index, rope, acc) =
     case rope of
       Leaf {startIdx, endIdx} => 
-        SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+        if index > startIdx then
+          SOME {startIdx = startIdx + acc, endIdx = endIdx + acc}
+        else
+          NONE
     | Concat (left, weight, right) =>
         if index < weight then
           helpPrevMatch (index, left, acc)
@@ -1276,6 +1293,46 @@ val r8Pass =
 
 ## Using the Interval Rope
 
-Okay, we have our Interval Rope implemented now, but how do we use it to keep track of search-matches in some text?
+Okay, we have our Interval Rope implemented and tested now, but how do we use it to keep track of search-matches in some text?
 
 There won't be any code now; that will be an exercise to the reader.
+
+### How to Insert
+
+When we want to insert a match that came from inserting into the underlying text, we:
+
+1. Call `incrementAt` with the index we inserted the string at and the length of the string that we inserted
+2. Call `prevMatch` with the Rope returned after incrementing it in step (1)
+3. Search the underlying text for matches from the prevMatch index in a loop, inserting every match we find, returning when we reach a match that already exists in the Rope
+
+The third step is a little vague on details, since the `prevMatch` function returns two indices (the start and end indices of the interval). Which index do we start iterating from?
+
+That partly depends on what kind of search we want to perform. If it is a regex search like "o+", then the previus match may possibly extend and become longer. If we insert "o" into a text containing "ooo", then our match will becom longer by 1.
+
+We can account for this case by deleting the interval returned from calling `prevMatch` and starting our loop from step (3) at the match's start index. Alternatively, if the regex engine's internals are exposed to us and we can see the final/accept state that the interval ended at, we can start looping at the end index + 1, feeding our interval's accept state as the initial state to the loop.
+
+This question is easier to answer if we do a plain text search though. We always start our loop at the interval's end index + 1, because there is no way the match will extend.
+
+Finally, the loop in step (3) can have the same worst-case time-complexity as finding all matches from scratch. Consider searcing for "z" and having only one match at the start of the document in a document with a million lines, We will basically need to search for all matches from the start to the end.
+
+In practice, I have never noticed any performance problems in the loop, so I don't worry about it, but a better way might exist. This problem stems from our search algorithm rather than from how Interval Ropes work in any event.
+
+### How to delete
+
+Deletion is similar to insertion.
+
+1. Call the `delete` function with the index we want to start deleting at and the length we want to delete
+2. Call `prevMatch` from the deletion's start index
+3. Search for and insert matches, starting from `prevMatch` until we find a match that already exists, in a loop
+
+The distinction between regex and plaintext search still applies here. The comments regarding the worst-case time complexity also apply.
+
+## Conclusion
+
+While I discovered Interval Ropes independently, I wasn't the first to do so. In the introduction to his [Rope Science](https://xi-editor.io/docs/rope_science_00.html) series of posts, Raph Levien mentions wanting to 'rite about Ropes and Interval Trees, but never did so. He probably had a similar data structure in mind to the one this blog post is about.
+
+The real stars of the game, in my opinion, are classic String-based Ropes, which hve lent themselves to a wide range of uses beyond manipunating text (and which might lend thmselves to more uses not yet known), as well as the power to think and understand, which gives us the ability to solve problems that were not previously known to have a solution.
+
+"I should not like my writing to spare other people the trouble of thinking. But, if possible, to stimulate someone to thoughts of his own." - Ludwig Wittgenstein
+
+The Cedar programming community, where Ropes were first created, reminds me of the above quote because they have certainly stimulated me to thoughts of my own. I hope this blog post encourages others to think and develop new ideas too.
