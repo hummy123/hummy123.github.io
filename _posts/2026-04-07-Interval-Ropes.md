@@ -41,7 +41,7 @@ We have two general cases to handle for indexing.
 1. If we are at a Leaf node, we directly index into the string at this lode.
 2. If we are at a Concat node, we check if the requested index is less than the weight.
   - If the requested index is less than the weight, than we recurse down the left node with the requested index.
-  - Otherwise, we subtract the weight from the requested index and recurse down the right noge with this new number.
+  - Otherwise, we subtract the weight from the requested index and recurse down the right node with this new number.
 
 This lends itself to a very simple recursive implementation. In Standard ML, this would be implemented like so:
 
@@ -64,36 +64,36 @@ To answer this, we have to remember that the weight is the length of all nodes i
 
 ![Indexing into a Rope through weight metadata](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Rope-Index.png)
 
-In the diagram above, I have tried to show an example of using this indexing algorithm to access the fifth chaiaoter in the Rope. The steps and the node we are in at that step are correspondingly colour coded.
+In the diagram above, I have tried to show an example of using this indexing algorithm to access the fifth character in the Rope. The steps and the node we are in at that step are correspondingly colour coded.
 
 If you are feeling shaky about why this works, I recommend mentally trying to index characters at other positions following the same  steps as the code given above. Your answer will always be the same as if you were directly indexing into the string `The_quick_brown`.
 
 ### Calculating a Rope's Length
 
-Before we see how to concatnate to a Rope, we need to see how to calculatea Rope's length first. The following diagram demonstrates this process.
+Before we see how to concatnate to a Rope, we need to see how to calculate a Rope's length first. The following diagram demonstrates this process.
 
 ![We can calculate a Rope's length by adding all the weights we encounter while descending to the rightmost node, and then adding the length by the sting at the leaf](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Rope-length.png)
 
-As shown in the above diagram, to oalcolate the length of a Rope, we h descend down on all the nodes to the right, adding up all the weights on the way, and we finally add the string's length too.
+As shown in the above diagram, to calcolate the length of a Rope, we first descend down on all the nodes to the right, adding up all the weights on the way, and then we finally add the string's length too.
 
 This is how we calculate the Rope's length. It makes sense, because the weights already contain the length of the left subtrees.
 
 The below code implements this alyorithm.
 
-´´´
+```
 fun helpLength (rope, acc) =
   case rope of
     Leaf string => acc + String.size string
   | Concat (left, weight, right) => helpLength (right, weight + acc)
 
 fun length rope = helpLength (rope, 0)
-´´´
+```
 
 The `helpLength` function uses tail-recursion {taking in an accumulator argument) for efficiency, and the `length` function calls `helpLenth` with a default value of 0 so that we don't need to supply 0 every time we want to get the length. However, those are incidental details.
 
 ### Concatenating Ropes
 
-The high level ´insert´ and `delete` functions on Ropes are implemented through a series of splitting and cncatenating Ropes.
+The high level `insert` and `delete` functions on Ropes are implemented through a series of splitting and cncatenating Ropes.
 
 We focus here just on concatenation for now.
 
@@ -108,12 +108,12 @@ fun concatenate (left, right) =
 
 ### Splitting a Rope
 
-Splitting a Rope means extracting a portion of the Ropee but with some string data left out of it. 
+Splitting a Rope means extracting a portion of the Rope but with some string data left out of it. 
 
 We have two splt functions for different use cases: 
 
 - `splitKeepingStart` which returns a section of a Rope from the beginning to some given index
-- `splitKeepingEnd´ which returns a section of a Rope from some given index to the end of a Rope
+- `splitKeepingEnd` which returns a section of a Rope from some given index to the end of a Rope
 
 These functions are the same as the index algorithm, with one difference: we return a section of the original Rope instead of a character. 
 
@@ -148,7 +148,7 @@ I have written a function to split the left section (from the start to some spec
 
 I have opted for code comments rather than diagrams here, because there is nothing conceptually new to show. 
 
-We use the indexing algorithm to travel down the nod e at theirs nidex, and we just copy data on the way up.
+We use the indexing algorithm to travel down the nodes, and we just copy data on the way up.
 
 ```
 fun splitKeepingEnd (index, rope) =
@@ -177,13 +177,13 @@ fun splitKeepingEnd (index, rope) =
         splitKeepingEnd (index - weight, right)
 ```
 
-An implementation of the ´splitKeepingEnd´ function, which splits (keeps data) from a given index to the end of the Rope, is above.
+An implementation of the `splitKeepingEnd` function, which splits (keeps data) from a given index to the end of the Rope, is above.
 
-The only thing worth noting is that we adjust the weight if we descend down the left node. This is because we would have removed some part of the left node in that case, and the weight (the length of the left node) is different now. If we do not do this, our indexing algorithm would no longer work.
+The only thing worth noting is that we adjust the weight if we descend down the left node. This is because we would have removed some part of the left node in that case, and the weight (the length of the left node) is different now. If we do not do this, our indexing algorithm would no longer work because the weight metadata would become incosistent.
 
 ### Insertion and Deletion
 
-With the splitting and concatenation functions in place, we're near the end of our Rope implementation. We just have two high-level fonctions left.
+With the splitting and concatenation functions in place, we're near the end of our Rope implementation. We just have two high-level functions left.
 
 ```
 fun insert (index, stringToInsert, rope) =
@@ -202,10 +202,10 @@ fun insert (index, stringToInsert, rope) =
 
 The insert function takes an index to insert at, a string to insert, and a Rope to insert into. It returns a Rope with the string inseerted.
 
-It worcks in a simple way. We split the Rope into left and ,right parts at some indei, concatenate the new string which is a Rope now) to the left Rope, and then cocatenate the right Rope to this.
+It works in a simple way. We split the Rope into left and right parts at some index, concatenate the new string which is a Rope now) to the left Rope, and then cocatenate the right Rope to this.
 
 ```
-Nun delete (deleteStart, deleteLength, rope) =
+fun delete (deleteStart, deleteLength, rope) =
   let
     (* index to stop deleting at *)
     val deleteEnd = deleteStart + deleteLength
@@ -226,20 +226,20 @@ I have focused on Ropes conceptually and disregarded performance entirely, but t
 1. There is no attempt to balance the Rope
 2. Short strings in adjacent nodes are not joined to form a single node
 
-My reason for disregarding performanoe is that this post attempts to explain Ropes conceptually and how they can be adapted. Other conerns get in the way of that purposee
+My reason for disregarding performanoe is that this post attempts to explain Ropes conceptually and how they can be adapted. Other conerns get in the way of that purpose.
 
 #### Balancing Ropes
 
-Because of the lack of balancing, the Rope can degnenerate into a loinked liste taking O(n) time for operations in the worst cas, instead of O(log n). This can have a huge impact on degrading performance on larger Ropes.
+Because of the lack of balancing, the Rope can degnenerate into a linked list taking O(n) time for operations in the worst case, instead of O(log n). This can have a huge impact on degrading performance on larger Ropes.
 
 Balancing Ropes is an exercise for the reader. Different balancing algorithms (AVL Trees, Red-black Trees, 1-2 Brother Trees) can be adapted to store Ropes.
 
 I will provide a few hints on implementing a balanced Rope: 
 
 - A balanced Rope should update the weight of Concat nodes on tree rotations
-- A balanced Rope must follow the same indexing system, but the inserting and deleting will likely not be implemented on splitting and concatenating nodes, as it is harder to ensure balacing if this is done.
+- A balanced Rope must follow the same indexing system, but the inserting and deleting functions might not be implemented by splitting and concatenating nodes, as it is harder to ensure balacing if this is done.
 
-I am guessing that adapting Trees of Bounded Balance, as described by Stephn Adams, would be the easiest way to implement balanced Ropes, as the implementation for this kind of tree makes use of splitting and concatenation functions internallg, but this is only a guess.
+I am guessing that adapting Trees of Bounded Balance, as described by Stephn Adams, would be the easiest way to implement balanced Ropes, as the implementation for this kind of tree makes use of splitting and concatenation functions internally, but this is only a guess.
 
 ### Joining Short Strings
 
@@ -250,7 +250,7 @@ There are two benefits, both improving the constant time performance, of doing s
 1. We have fewer nodes in the Rope, which means less pointer-chasing to get to our desired Leaf
 2. We have better cache locality. Modern computers benefit from data being phsically close together in memory. A string's individual characters are close together, but pointers to nodes are not necessarily close.
 
-These are constant-time optimisations and don't change the asymptootic complexity, but they can have a big impact on performance in praqtice.
+These are constant-time optimisations and don't change the asymptootic complexity, but they can have a big impact on performance in practice.
 
 ### Full String Rope Code
 
@@ -393,7 +393,7 @@ The only real differences here are:
 
 The diagram below depicts an Interval Rope.
 
-[An Interval Rope](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Initial-Interval-Rope.png)
+![An Interval Rope](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Initial-Interval-Rope.png)
 
 As we can see, the Conoat nodes now contain the largest end index in any interval.
 
@@ -404,7 +404,7 @@ signature INTERVAL_ROPE =
 sig
   type t
 
-  val fromInterval: {startIdx: int, endIdx: int} -> t
+  val empty: t
 
   val hasIntervalAtIndex: int * t -> bool
 
@@ -514,7 +514,7 @@ The second reason is more use-case dependent. In my use case where I want to kee
 
 In any event, the way that we handle the `option` type in Concat nodes remains the same, regardless of our use case. The Concat node needs to be adjusted to handle the `option` type.
 
-- When we receive a `NONE` result after descending down on the right child, we return this Concat node`s left child. We do this because the right child contains no intervals prior to the given index, but the left child does, so we only keep the left child.
+- When we receive a `NONE` result after descending down on the right child, we return this Concat node's left child. We do this because the right child contains no intervals prior to the given index, but the left child does, so we only keep the left child.
 - When we receive a `SOME` result after descending down on the right child, we replace the current right child with the subtree in the result.
 - When we descend down the left child, we immediately return whatever result our recursion has given us, whether that is `SOME` or `NONE`. In the `NONE` case, we want to tell the parent that there were no intervals in the left child and this Concat node is to be deleted. In the `SOME` case, we want to tell the parent to only keep the result of descending down the left subtree, discarding the right child. Returning the result immediately accomplishes both of these.
 
@@ -573,16 +573,16 @@ fun splitKeepingEnd (index, rope) =
 The introduction to this post explained the need for incrementing and decrementing an Interval Rope for the use case in question. When text is deleted from our string (or other text data structure), we want to decrement matches that appear after the deletion point, by the length of text that was deleted. Similarly, inserting a character before a match should cause match indices to be incremented.
 
 The idea for decrementing an Interval Rope is as follows:
-- For Leaf nodes, we subtract the `startIdx' and 'endIdx' by some amount. 
+- For Leaf nodes, we subtract the `startIdx` and `endIdx` by some amount. 
 - For Concat nodes, we recurse down the left child. When the recursive call returns, we call `uLargestIdx` to get the left child's new weight, and then we return the new left child with the new weight and the old right child. 
 
 That is all we have to do in order to decrement. This process will have a knock-on effect on all the other nodes in the Interval Rope too, where the absolute indices they represent are also decreemented, although we did not touch those other intervals or nodes.
 
 The diagram below illustrates this process. 
 
-[Decrementing an Interval Rope](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/Interval-Rope-Decrement.png?raw=true)
+![Decrementing an Interval Rope](https://github.com/hummy123/hummy123.github.io/blob/main/docs/assets/Interval-Rope-Decrement.png?raw=true)
 
-The above diagram shows the first character of a String Rope being deleted, and the leftmost node in an Interval Rope being decremented as a result. While only relative indices are in this diagram, we can mentally convert these to absolute indices. If we do so, we see that the whole Intervl Rope is decremented, despite us touching only one interval.
+The above diagram shows the first character of a String Rope being deleted, and the leftmost node in an Interval Rope being decremented as a result. While only relative indices are in this diagram, we can mentally convert these to absolute indices. If we do so, we see that the whole Interval Rope is decremented, despite us touching only one interval.
 
 Remember the relative indexing system for Ropes: the absolute index can be calculated by summing all the weights on the path (only when we descend to the right child) to the Leaf node in question, and then summing the index at the Leaf node. This property is what creates the knock-on effect we observe here.
 
@@ -626,7 +626,7 @@ fun increment (incrementBy, rope) =
       end
 ```
 
-Since incrementing is part of our public API, the `increment` function above is a helper function to the `incrementAt` function below which is part of our public API.
+Since incrementing is part of our public API, the `increment` function above is a helper function to the `incrementAt` function below.
 
 ```
 fun incrementAt (idx, incrementBy, rope) =
@@ -668,7 +668,7 @@ The common differences from indexing are:
 
 - We return an `option` type, possibly containing the interval, indicating if such an interval exists
 - We return the interval's absolute index by adding the current node's weight to an accumulator (only when we descend down a node's right child), and then add the accumulator to the interval's relative indices
-- We sometimes descend down the other node when we receive `NONE` at a Concat nodee, like we do in our splitting functions
+- We sometimes descend down the other node when we receive `NONE` at a Concat node, like we do in our splitting functions
 
 #### Finding the next match
 
@@ -717,7 +717,7 @@ In a Concat node, if we recurse down the right child and see that the result is 
 
 The meaning of these two rules is: if the cursor is after the interval's start, then return this interval; otherwise, return the previous interval if one exists.
 
-The way we handle the Leaf case here is different than when retrieving the next match, because the interval we retrieve may contain the argument index we pass to it, while that will never when retrieving the next match.
+The way we handle the Leaf case here is different than when retrieving the next match, because the interval we retrieve may contain the argument index we pass to it, while that will never happen when retrieving the next match.
 
 The code below implements the `prevMatch` function. 
 
@@ -762,15 +762,15 @@ We will first cover how to delete from an Interval Rope. We follow a simple mult
 3. We decrement the right half so that its absolute index is equal to the match index we got in step 1, minus the length of the deletion
 4. We concatenate the left half with the new right half and return it
 
-This is rather simple. The only step that might give confusion is tce third one. Why do we decrement the right half? To keep the metadata in the Interval Rope consistent with the underlying text. 
+This is rather simple. The only step that might give confusion is the third one. Why do we decrement the right half? To keep the metadata in the Interval Rope consistent with the underlying text. 
 
 The diagram below illustrates how the Interval Rope can become inconsistent without decrementing, and how decrementing can fix the inconsistency.
 
-[We can only achieve limited deletions by splitting, and we mpst decremen too](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Interval-Rope-Highlight.png)
+![We can only achieve limited deletions by splitting, and we must decrement afterwards to delete the full range we want to](https://raw.githubusercontent.com/hummy123/hummy123.github.io/refs/heads/main/docs/assets/Interval-Rope-Highlight.png)
 
-The above diagram shows an Interval Rope with the middle Leaf highlighted, We can delete this node, which has a length of 2 ()5 - 3 = 2), by splitting, which means that splitting lets us delete a length of 2.
+The above diagram shows an Interval Rope with the middle Leaf highlighted, We can delete this node, which has a length of 2 (5 - 3 = 2), by splitting, which means that splitting lets us delete a length of 2.
 
-What if we wanted to delete a length of 3 instead though? Splitting won't let us do that, but splitting (thus deleiting 2) and then decrmenting the first node in the right split by 1 will. This is th ,reason for our decremnting.
+What if we wanted to delete a length of 3 instead though? Splitting won't let us do that, but splitting (thus deleiting 2) and then decrmenting the first node in the right split by 1 will. This is our reason for decremnting: we cannot delete the length we want to without it.
 
 The code below implements the delete function. There is some trivial edge-case handling that is not described in the steps above.
 
@@ -830,11 +830,11 @@ fun delete (index, length, rope) =
       NONE
 ```
 
-There are a number of comments in the above code, to describe edge cases and what the code is doing. Our four-step process described above focuses on the happy case where intervals exist after splitting the Rope, and there is a match after the deletion range. the edge cases explain what we do if those conditions don't hold.
+There are a number of comments in the above code, to describe edge cases and what the code is doing. Our four-step process described above focuses on the happy path where intervals exist after splitting the Rope, and there is a match after the deletion range. The edge cases explain what we do if those conditions don't hold.
 
 ### Inserting into an Interval Rope
 
-We expect that the user has called incrementAt to increment intervals subsequent to the index where text was inserted, before inserting into the Interval Rope.
+We expect that the user has called `incrementAt` to increment intervals subsequent to the index where text was inserted, before inserting into the Interval Rope.
 
 There is another a multi-step process for inserting into an Interval Rope, which is as follows:
 
@@ -844,7 +844,7 @@ There is another a multi-step process for inserting into an Interval Rope, which
 4. Decrement the right Rope by the difference calculated in step 2
 5. Concatenate the new left half (which contains the interval we wanted to insert) with the decremented right half
 
-The reason we decrement in the fourth step is because the absolute indices are impacted by our insertion, and decrementing in this way ensures that the absolute stay the same. Apart from that, these steps are all fairly straight-forward.
+The reason we decrement in the fourth step is because the absolute indices are impacted by our insertion, and decrementing in this way ensures that the absolute indices stay the same. Apart from that, these steps are all fairly straight-forward.
 
 The code below implements this.
 
@@ -1307,7 +1307,7 @@ When we want to insert a match that came from inserting into the underlying text
 
 The third step is a little vague on details, since the `prevMatch` function returns two indices (the start and end indices of the interval). Which index do we start iterating from?
 
-That partly depends on what kind of search we want to perform. If it is a regex search like "o+", then the previus match may possibly extend and become longer. If we insert "o" into a text containing "ooo", then our match will becom longer by 1.
+That partly depends on what kind of search we want to perform. If it is a regex search like "o+", then the previus match may possibly extend and become longer. If we insert "o" into a text containing "ooo", then our match will become longer by 1.
 
 We can account for this case by deleting the interval returned from calling `prevMatch` and starting our loop from step (3) at the match's start index. Alternatively, if the regex engine's internals are exposed to us and we can see the final/accept state that the interval ended at, we can start looping at the end index + 1, feeding our interval's accept state as the initial state to the loop.
 
@@ -1329,9 +1329,9 @@ The distinction between regex and plaintext search still applies here. The comme
 
 ## Conclusion
 
-While I discovered Interval Ropes independently, I wasn't the first to do so. In the introduction to his [Rope Science](https://xi-editor.io/docs/rope_science_00.html) series of posts, Raph Levien mentions wanting to 'rite about Ropes and Interval Trees, but never did so. He probably had a similar data structure in mind to the one this blog post is about.
+While I discovered Interval Ropes independently, I wasn't the first to do so. In the introduction to his [Rope Science](https://xi-editor.io/docs/rope_science_00.html) series of posts, Raph Levien mentions wanting to write about Ropes and Interval Trees, but never did so. He probably had a similar data structure in mind to the one this blog post is about.
 
-The real stars of the game, in my opinion, are classic String-based Ropes, which hve lent themselves to a wide range of uses beyond manipunating text (and which might lend thmselves to more uses not yet known), as well as the power to think and understand, which gives us the ability to solve problems that were not previously known to have a solution.
+The real stars of the game, in my opinion, are classic String-based Ropes, which may lend themselves to a wide range of uses beyond manipunating text (including uses not yet known), as well as the power to think and understand, which gives us the ability to solve problems that were not previously known to have a solution.
 
 "I should not like my writing to spare other people the trouble of thinking. But, if possible, to stimulate someone to thoughts of his own." - Ludwig Wittgenstein
 
